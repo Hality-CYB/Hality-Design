@@ -1,4 +1,4 @@
-import cybFullLogo from '@/imports/Full_Logo_CheckYourBreath.jpg'
+import cybFullLogo from '@/imports/Full_Logo_CheckYourBreath.png'
 
 interface LandingPageProps {
   onNavigate: (view: string) => void

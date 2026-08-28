@@ -2,7 +2,7 @@
   "title": "Check Your Breath | Hality",
   "description": "Check Your Breath (CYB): diagnóstico inteligente de halitose por IA a partir de uma foto da língua, feito pela Hality — referência em diagnóstico e tratamento do mau hálito há mais de 10 anos.",
   "icons": {
-    "icon": "/favicon-cyb.jpg"
+    "icon": "/favicon-cyb.png"
   },
   "robots": {
     "index": false

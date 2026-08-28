@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { AuthUser } from './AuthFlow'
 import { Btn, Card, Badge, Empty, Avatar, SectionHeader, Modal, Textarea } from './shared/UI'
 import { Icon } from './shared/Icons'
-import cybIcon from '@/imports/Icon_CheckYourBreath.jpg'
+import cybIcon from '@/imports/Icon_CheckYourBreath.png'
 
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'
 type AdminView = 'dashboard' | 'users' | 'user-detail' | 'diagnostics' | 'diag-detail' | 'content' | 'tip-edit' | 'notif-edit' | 'profile'

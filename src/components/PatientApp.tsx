@@ -3,7 +3,7 @@ import type { AuthUser } from './AuthFlow'
 import { Btn, Card, Badge, Empty, Modal, Alert, Avatar, PageHero, SectionHeader } from './shared/UI'
 import { Icon } from './shared/Icons'
 import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
-import cybIcon from '@/imports/Icon_CheckYourBreath.jpg'
+import cybIcon from '@/imports/Icon_CheckYourBreath.png'
 
 type View = 'home' | 'diagnosis-flow' | 'diagnostics' | 'profile'
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'

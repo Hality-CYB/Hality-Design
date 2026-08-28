@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import cybFullLogo from '@/imports/Full_Logo_CheckYourBreath.jpg'
-import cybIcon from '@/imports/Icon_CheckYourBreath.jpg'
+import cybFullLogo from '@/imports/Full_Logo_CheckYourBreath.png'
+import cybIcon from '@/imports/Icon_CheckYourBreath.png'
 import { Btn, Alert } from './shared/UI'
 import { Icon } from './shared/Icons'
 
