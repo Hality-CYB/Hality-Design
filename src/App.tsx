@@ -22,7 +22,7 @@ export default function App() {
 
   if (!user) {
     if (showLanding) return <LandingPage onNavigate={handleLandingNavigate} />
-    return <AuthFlow onLogin={setUser} initialScreen={authScreen} />
+    return <AuthFlow onLogin={setUser} initialScreen={authScreen} onBackToLanding={() => setShowLanding(true)} />
   }
   if (user.role === 'admin') return <AdminApp user={user} onLogout={handleLogout} />
   if (user.role === 'professional') return <ProfessionalApp user={user} onLogout={handleLogout} />

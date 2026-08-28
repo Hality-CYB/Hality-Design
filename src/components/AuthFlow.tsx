@@ -68,7 +68,7 @@ function AuthPage({ children }: { children: React.ReactNode }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function AuthFlow({ onLogin, initialScreen = 'login' }: { onLogin: (user: AuthUser) => void; initialScreen?: Screen }) {
+export default function AuthFlow({ onLogin, initialScreen = 'login', onBackToLanding }: { onLogin: (user: AuthUser) => void; initialScreen?: Screen; onBackToLanding?: () => void }) {
   const [screen, setScreen] = useState<Screen>(initialScreen)
 
   // Login state
@@ -237,9 +237,13 @@ export default function AuthFlow({ onLogin, initialScreen = 'login' }: { onLogin
         {rError && <Alert message={rError} />}
         <Btn type="submit" full size="lg">Criar conta</Btn>
       </form>
-      <p style={{ textAlign: 'center', marginTop: 16 }}>
-        <button onClick={() => setScreen('login')} style={{ background: 'none', border: 'none', color: 'var(--gray-text)', fontFamily: 'inherit', fontSize: 14, cursor: 'pointer' }}>← Voltar ao login</button>
-      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 16 }}>
+        <button onClick={() => onBackToLanding?.()} style={{ background: 'none', border: 'none', color: 'var(--gray-text)', fontFamily: 'inherit', fontSize: 14, cursor: 'pointer' }}>← Página inicial</button>
+        <p style={{ margin: 0, fontSize: 14, color: 'var(--gray-text)' }}>
+          Já tem conta?{' '}
+          <button onClick={() => setScreen('login')} style={{ background: 'none', border: 'none', color: 'var(--teal-800)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, cursor: 'pointer', padding: 0 }}>Entrar</button>
+        </p>
+      </div>
     </AuthPage>
   )
 
