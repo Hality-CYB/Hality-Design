@@ -163,8 +163,8 @@ function Dashboard({ user, patients, setView }: { user: AuthUser; patients: Pati
                     <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{d.date}</div>
                   </div>
                   {d.level !== null && <LevelChip level={d.level} size="sm" />}
-                  <Btn variant="primary" size="sm" onClick={() => setView('diag-detail')}>Revisar</Btn>
                 </div>
+                <Btn variant="primary" size="sm" onClick={() => setView('diag-detail')}>Revisar</Btn>
               ))}
             </div>
           </Card>
