@@ -1,4 +1,4 @@
-import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
+import cybFullLogo from '@/imports/Full_Logo_CheckYourBreath.jpg'
 
 interface LandingPageProps {
   onNavigate: (view: string) => void
@@ -51,6 +51,23 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
 
       {/* Hero */}
       <section className="lp-section" style={{ background: 'linear-gradient(135deg, #E0F4F8 0%, #F0F9FF 60%, #D4EDDA 100%)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <img src={cybFullLogo} alt="Check Your Breath" style={{ height: 34, objectFit: 'contain' }} />
+          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+            <button
+              onClick={() => onNavigate('login')}
+              style={{ background: 'none', border: 'none', color: '#0F2A35', fontFamily: 'Outfit', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+            >
+              Entrar
+            </button>
+            <button
+              onClick={() => onNavigate('register')}
+              style={{ background: '#0B6B82', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+            >
+              Cadastrar
+            </button>
+          </div>
+        </div>
         <div className="lp-hero-grid" style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#C8EAD4', borderRadius: 999, padding: '6px 16px', marginBottom: 20 }}>
@@ -183,7 +200,9 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
       {/* CTA */}
       <section className="lp-section" style={{ background: 'linear-gradient(135deg, #0B6B82, #0a4f61)' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
-          <img src={halityLogo} alt="Hality" style={{ height: 48, marginBottom: 24, filter: 'brightness(0) invert(1)' }} />
+          <div style={{ display: 'inline-block', background: '#fff', borderRadius: 14, padding: '10px 18px', marginBottom: 24 }}>
+            <img src={cybFullLogo} alt="Check Your Breath" style={{ height: 32, objectFit: 'contain', display: 'block' }} />
+          </div>
           <h2 className="lp-heading" style={{ fontFamily: 'Outfit', fontWeight: 800, color: '#fff', margin: '0 0 16px' }}>
             Caro Dr(a), faça parte dessa revolução
           </h2>

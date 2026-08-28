@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
+import cybFullLogo from '@/imports/Full_Logo_CheckYourBreath.jpg'
+import cybIcon from '@/imports/Icon_CheckYourBreath.jpg'
 import { Btn, Alert } from './shared/UI'
 import { Icon } from './shared/Icons'
 
@@ -52,8 +53,8 @@ function AuthPage({ children }: { children: React.ReactNode }) {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px' }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 68, height: 68, borderRadius: 20, background: 'var(--gradient-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 20px rgba(11,107,130,0.3)' }}>
-            <img src={halityLogo} alt="Hality" style={{ height: 42, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+          <div style={{ width: 68, height: 68, borderRadius: 20, background: '#fff', border: '1.5px solid var(--teal-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 20px rgba(11,107,130,0.15)' }}>
+            <img src={cybIcon} alt="Check Your Breath" style={{ height: 40, objectFit: 'contain' }} />
           </div>
           <h1 style={{ fontFamily: 'Outfit', fontSize: 24, fontWeight: 900, color: 'var(--body)', margin: '0 0 4px', letterSpacing: -0.5 }}>Check Your Breath</h1>
           <p style={{ fontSize: 13, color: 'var(--gray-text)', margin: 0 }}>Diagnóstico inteligente do hálito com IA</p>
@@ -123,7 +124,7 @@ export default function AuthFlow({ onLogin, initialScreen = 'login' }: { onLogin
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* Logo area */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 32px 32px' }}>
-        <img src={halityLogo} alt="Hality" style={{ height: 120, objectFit: 'contain' }} />
+        <img src={cybFullLogo} alt="Check Your Breath" style={{ width: '100%', maxWidth: 320, objectFit: 'contain' }} />
       </div>
 
       {/* Form area */}

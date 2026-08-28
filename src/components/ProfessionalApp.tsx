@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { AuthUser } from './AuthFlow'
 import { Btn, Card, Badge, ScoreMeter, Empty, Avatar, SectionHeader, StatCard, Textarea } from './shared/UI'
 import { Icon } from './shared/Icons'
-import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
+import cybIcon from '@/imports/Icon_CheckYourBreath.jpg'
 
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'
 type ProfView = 'dashboard' | 'diagnostics' | 'diag-detail' | 'patients' | 'patient-detail' | 'profile'
@@ -32,7 +32,7 @@ function TopBar({ user, onProfile }: { user: AuthUser; onProfile: () => void }) 
   return (
     <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
       <div>
-        <img src={halityLogo} alt="CYB" style={{ height: 22, objectFit: 'contain', display: 'block' }} />
+        <img src={cybIcon} alt="Check Your Breath" style={{ height: 22, objectFit: 'contain', display: 'block' }} />
         <span style={{ fontSize: 10, color: 'var(--gray-text)', fontFamily: 'Outfit', fontWeight: 600 }}>Profissional</span>
       </div>
       <button onClick={onProfile} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>

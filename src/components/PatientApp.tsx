@@ -3,6 +3,7 @@ import type { AuthUser } from './AuthFlow'
 import { Btn, Card, Badge, Empty, Modal, Alert, Avatar, PageHero, SectionHeader } from './shared/UI'
 import { Icon } from './shared/Icons'
 import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
+import cybIcon from '@/imports/Icon_CheckYourBreath.jpg'
 
 type View = 'home' | 'diagnosis-flow' | 'diagnostics' | 'profile'
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'
@@ -93,7 +94,7 @@ function BottomNav({ view, setView }: { view: View; setView: (v: View) => void }
 function TopBar() {
   return (
     <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-      <img src={halityLogo} alt="CYB" style={{ height: 24, objectFit: 'contain' }} />
+      <img src={cybIcon} alt="Check Your Breath" style={{ height: 24, objectFit: 'contain' }} />
       <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: 'var(--body)' }}>Check Your Breath</span>
       <div style={{ width: 34 }} />
     </div>
