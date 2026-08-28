@@ -697,7 +697,7 @@ function Profile({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Usuário Free · {user.email}</div>
       </div>
 
-      <div style={{ margin: '-24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ margin: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Card>
           <SectionHeader title="Dados pessoais" action={<Btn variant="secondary" size="sm" onClick={() => { setEditing(!editing); setSaved(false) }}>{editing ? 'Cancelar' : 'Editar'}</Btn>} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

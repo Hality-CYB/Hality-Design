@@ -128,7 +128,7 @@ export default function AuthFlow({ onLogin, initialScreen = 'login', onBackToLan
       </div>
 
       {/* Form area */}
-      <div style={{ padding: '0 24px 52px' }}>
+      <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', padding: '0 24px 52px', boxSizing: 'border-box' }}>
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           {/* Email */}
           <div style={{ marginBottom: 16 }}>

@@ -385,7 +385,7 @@ function ProfProfile({ user, onLogout }: { user: AuthUser; onLogout: () => void 
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Profissional · {user.email}</div>
         </div>
       </div>
-      <div style={{ margin: '-24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ margin: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Card>
           {[
             { label: 'Especialidade', value: 'Odontologia / Halitose' },

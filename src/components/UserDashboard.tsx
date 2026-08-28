@@ -453,7 +453,7 @@ function ProfileView({ user }: { user: User }) {
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Usuário Free</div>
       </div>
 
-      <div style={{ margin: '-24px 16px 0', background: '#fff', borderRadius: 20, padding: '20px', boxShadow: '0 -4px 20px rgba(11,107,130,0.1)', border: '1px solid rgba(11,107,130,0.06)', marginBottom: 16 }}>
+      <div style={{ margin: '24px 16px 0', background: '#fff', borderRadius: 20, padding: '20px', boxShadow: '0 -4px 20px rgba(11,107,130,0.1)', border: '1px solid rgba(11,107,130,0.06)', marginBottom: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {[
             { label: 'Nome completo', value: formName, set: setFormName, icon: '👤' },
