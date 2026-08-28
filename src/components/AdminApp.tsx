@@ -5,23 +5,54 @@ import { Icon } from './shared/Icons'
 import cybIcon from '@/imports/Icon_CheckYourBreath.png'
 
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'
-type AdminView = 'dashboard' | 'users' | 'user-detail' | 'diagnostics' | 'diag-detail' | 'content' | 'tip-edit' | 'notif-edit' | 'profile'
-type ContentTab = 'tips' | 'notifications' | 'anamnesis'
+type AdminView = 'dashboard' | 'users' | 'user-detail' | 'diagnostics' | 'diag-detail' | 'content' | 'tip-edit' | 'profile'
+// 'notifications' tab/edit ficam desativados por enquanto — ainda vou validar com o time
+type ContentTab = 'tips'
+
+// ─── Level system (1=Normal, 2=Íntima, 3=Social) ────────────────────────────
+type Level = 1 | 2 | 3
+const levelColor = (l: Level | null) => l === null ? '#6B7280' : l === 1 ? '#16A34A' : l === 2 ? '#FF9500' : '#FF3B30'
+const levelLabel = (l: Level | null) => l === null ? 'Pendente' : l === 1 ? 'Hálito Normal' : l === 2 ? 'Halitose Íntima' : 'Mau Hálito Social'
+const levelBadge = (l: Level | null): BadgeStatus => l === null ? 'pending' : l === 1 ? 'success' : l === 2 ? 'warning' : 'danger'
+
+function LevelChip({ level, size = 'md' }: { level: Level | null; size?: 'sm' | 'md' | 'lg' }) {
+  const color = levelColor(level)
+  const label = levelLabel(level)
+  const pad = size === 'sm' ? '4px 10px' : size === 'lg' ? '8px 18px' : '6px 14px'
+  const fs = size === 'sm' ? 11 : size === 'lg' ? 15 : 13
+  return (
+    <span style={{
+      background: color + '18',
+      color,
+      border: `1.5px solid ${color}40`,
+      borderRadius: 999,
+      padding: pad,
+      fontFamily: 'Outfit',
+      fontWeight: 700,
+      fontSize: fs,
+      whiteSpace: 'nowrap',
+      display: 'inline-block',
+    }}>{label}</span>
+  )
+}
+
+type Role = 'patient' | 'professional' | 'admin'
 
 const USERS = [
-  { id: 1, name: 'Ana Paula Ferreira', email: 'ana@email.com', role: 'patient', plan: 'Free', status: 'Ativo', diags: 4, joined: '10/01/2026' },
-  { id: 2, name: 'Dr. Carlos Nunes', email: 'carlos@clinic.com', role: 'professional', plan: 'Premium', status: 'Ativo', diags: 0, joined: '05/03/2026' },
-  { id: 3, name: 'Roberto Souza', email: 'roberto@email.com', role: 'patient', plan: 'Premium', status: 'Inativo', diags: 3, joined: '22/04/2026' },
-  { id: 4, name: 'Fernanda Lima', email: 'fer@email.com', role: 'patient', plan: 'Free', status: 'Ativo', diags: 2, joined: '01/06/2026' },
-  { id: 5, name: 'Dra. Mariana Rocha', email: 'mari@clinic.com', role: 'professional', plan: 'Premium', status: 'Ativo', diags: 0, joined: '15/07/2026' },
+  { id: 1, name: 'Ana Paula Ferreira', email: 'ana@email.com', role: 'patient' as Role, plan: 'Free', status: 'Ativo', diags: 4, joined: '10/01/2026' },
+  { id: 2, name: 'Dr. Carlos Nunes', email: 'carlos@clinic.com', role: 'professional' as Role, plan: 'Premium', status: 'Ativo', diags: 0, joined: '05/03/2026' },
+  { id: 3, name: 'Roberto Souza', email: 'roberto@email.com', role: 'patient' as Role, plan: 'Premium', status: 'Inativo', diags: 3, joined: '22/04/2026' },
+  { id: 4, name: 'Fernanda Lima', email: 'fer@email.com', role: 'patient' as Role, plan: 'Free', status: 'Ativo', diags: 2, joined: '01/06/2026' },
+  { id: 5, name: 'Dra. Mariana Rocha', email: 'mari@clinic.com', role: 'professional' as Role, plan: 'Premium', status: 'Ativo', diags: 0, joined: '15/07/2026' },
+  { id: 6, name: 'Igor Xavier', email: 'igor@hality.com', role: 'admin' as Role, plan: 'Premium', status: 'Ativo', diags: 0, joined: '01/01/2026' },
 ]
 
-const DIAGS = [
-  { id: 1001, user: 'Ana Paula Ferreira', date: '12/08/2026', score: 68, status: 'Revisado', aiConf: 87 },
-  { id: 1002, user: 'Julia Costa', date: '10/08/2026', score: null, status: 'Processando', aiConf: null },
-  { id: 1003, user: 'Carlos Mendes', date: '08/08/2026', score: 28, status: 'Revisado', aiConf: 92 },
-  { id: 1004, user: 'Roberto Souza', date: '05/08/2026', score: 88, status: 'Aguardando revisão', aiConf: 79 },
-  { id: 1005, user: 'Fernanda Lima', date: '01/08/2026', score: 44, status: 'Revisado', aiConf: 85 },
+const DIAGS: { id: number; user: string; date: string; level: Level | null; status: string; aiConf: number | null }[] = [
+  { id: 1001, user: 'Ana Paula Ferreira', date: '12/08/2026', level: 2, status: 'Revisado', aiConf: 87 },
+  { id: 1002, user: 'Julia Costa', date: '10/08/2026', level: null, status: 'Processando', aiConf: null },
+  { id: 1003, user: 'Carlos Mendes', date: '08/08/2026', level: 1, status: 'Revisado', aiConf: 92 },
+  { id: 1004, user: 'Roberto Souza', date: '05/08/2026', level: 3, status: 'Aguardando revisão', aiConf: 79 },
+  { id: 1005, user: 'Fernanda Lima', date: '01/08/2026', level: 2, status: 'Revisado', aiConf: 85 },
 ]
 
 const TIPS = [
@@ -37,18 +68,10 @@ const NOTIFS = [
   { id: 3, title: 'Resultado do diagnóstico disponível', type: 'update', sent: '03/08/2026', audience: 'Pacientes Premium' },
 ]
 
-const ANAM_QUESTIONS = [
-  { id: 1, label: 'É fumante?', type: 'Sim/Não', required: true, active: true },
-  { id: 2, label: 'Frequência de escovação', type: 'Seleção', required: true, active: true },
-  { id: 3, label: 'Medicações em uso', type: 'Texto livre', required: false, active: true },
-  { id: 4, label: 'Sente boca seca?', type: 'Sim/Não', required: false, active: true },
-  { id: 5, label: 'Doenças sistêmicas', type: 'Múltipla escolha', required: false, active: false },
-]
-
-const diagColor = (s: number | null) => s === null ? 'var(--gray-3)' : s < 33 ? '#16A34A' : s < 66 ? '#F59E0B' : '#DC2626'
 const statusBadge = (status: string): BadgeStatus => status === 'Revisado' ? 'success' : status === 'Processando' ? 'neutral' : 'pending'
 const roleBadge = (r: string): BadgeStatus => r === 'admin' ? 'danger' : r === 'professional' ? 'info' : 'neutral'
 const roleLabel = (r: string) => r === 'admin' ? 'Admin' : r === 'professional' ? 'Profissional' : 'Paciente'
+const avatarRole = (r: string): 'professional' | 'admin' | undefined => r === 'admin' ? 'admin' : r === 'professional' ? 'professional' : undefined
 
 // ─── TopBar ───────────────────────────────────────────────────────────────────
 function TopBar({ user, onProfile }: { user: AuthUser; onProfile: () => void }) {
@@ -59,7 +82,7 @@ function TopBar({ user, onProfile }: { user: AuthUser; onProfile: () => void }) 
         <span style={{ fontSize: 10, color: 'var(--teal-700)', fontFamily: 'Outfit', fontWeight: 700 }}>Admin</span>
       </div>
       <button onClick={onProfile} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-        <Avatar name={user.name} size={34} />
+        <Avatar name={user.name} size={34} role="admin" />
       </button>
     </div>
   )
@@ -77,7 +100,7 @@ function BottomNav({ view, setView }: { view: AdminView; setView: (v: AdminView)
     view === t ||
     (t === 'diagnostics' && view === 'diag-detail') ||
     (t === 'users' && view === 'user-detail') ||
-    (t === 'content' && (view === 'tip-edit' || view === 'notif-edit'))
+    (t === 'content' && view === 'tip-edit')
 
   return (
     <nav style={{ background: '#fff', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '10px 8px 26px', flexShrink: 0 }}>
@@ -133,7 +156,7 @@ function Dashboard({ user, setView }: { user: AuthUser; setView: (v: AdminView) 
             { label: 'Ver usuários', icon: <Icon name="users" size={20} color="var(--teal-800)" />, bg: 'var(--teal-100)', action: () => setView('users') },
             { label: 'Ver diagnósticos', icon: <Icon name="beaker" size={20} color="#7C3AED" />, bg: '#EDE9FE', action: () => setView('diagnostics') },
             { label: 'Criar dica', icon: <Icon name="lightbulb" size={20} color="#D97706" />, bg: '#FEF3C7', action: () => setView('tip-edit') },
-            { label: 'Enviar aviso', icon: <Icon name="megaphone" size={20} color="#DB2777" />, bg: '#FCE7F3', action: () => setView('notif-edit') },
+            { label: 'Criar usuário', icon: <Icon name="plus" size={20} color="#16A34A" />, bg: '#D1FAE5', action: () => setView('users') },
           ].map((a, i) => (
             <button key={i} onClick={a.action} style={{ background: '#fff', border: '1.5px solid var(--border)', borderRadius: 16, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 10, cursor: 'pointer', textAlign: 'left' }}>
               <div style={{ width: 38, height: 38, borderRadius: 11, background: a.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{a.icon}</div>
@@ -148,7 +171,7 @@ function Dashboard({ user, setView }: { user: AuthUser; setView: (v: AdminView) 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {USERS.slice(0, 3).map((u, i) => (
               <div key={u.id} onClick={() => setView('user-detail')} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}>
-                <Avatar name={u.name} size={36} />
+                <Avatar name={u.name} size={36} role={avatarRole(u.role)} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)' }}>{u.name}</div>
                   <div style={{ fontSize: 11, color: 'var(--gray-text)' }}>{u.joined}</div>
@@ -175,7 +198,7 @@ function Dashboard({ user, setView }: { user: AuthUser; setView: (v: AdminView) 
                   <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13 }}>{d.user}</div>
                   <div style={{ fontSize: 11, color: 'var(--gray-text)' }}>{d.date}</div>
                 </div>
-                {d.score !== null && <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: diagColor(d.score) }}>{d.score}</span>}
+                <LevelChip level={d.level} size="sm" />
                 <Badge label={d.status} status={statusBadge(d.status)} />
               </div>
             ))}
@@ -187,31 +210,85 @@ function Dashboard({ user, setView }: { user: AuthUser; setView: (v: AdminView) 
   )
 }
 
+// ─── Create user modal ────────────────────────────────────────────────────────
+function CreateUserModal({ onClose, onCreate }: { onClose: () => void; onCreate: (name: string, email: string, role: Role) => void }) {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState<Role>('patient')
+
+  const roleOptions: { v: Role; label: string; icon: React.ReactNode; bg: string }[] = [
+    { v: 'patient', label: 'Paciente', icon: <Icon name="person" size={18} color="var(--teal-800)" />, bg: 'var(--teal-100)' },
+    { v: 'professional', label: 'Profissional', icon: <Icon name="medical" size={18} color="#1E40AF" />, bg: '#DBEAFE' },
+    { v: 'admin', label: 'Admin', icon: <Icon name="shield" size={18} color="#92400E" />, bg: '#FEF3C7' },
+  ]
+
+  return (
+    <Modal onClose={onClose} title="Criar usuário">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Nome completo</label>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome do usuário..." style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>E-mail</label>
+          <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="email@exemplo.com" style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Tipo de usuário</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {roleOptions.map(o => (
+              <button key={o.v} onClick={() => setRole(o.v)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${role === o.v ? 'var(--teal-800)' : 'var(--border)'}`, background: role === o.v ? 'var(--teal-100)' : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: o.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{o.icon}</div>
+                <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{o.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <Btn full size="lg" disabled={!name.trim() || !email.trim()} onClick={() => onCreate(name.trim(), email.trim(), role)}>
+          <Icon name="check" size={16} color="#fff" /> Criar usuário
+        </Btn>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── Users list ───────────────────────────────────────────────────────────────
 function UsersList({ setView }: { setView: (v: AdminView) => void }) {
   const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState<'Todos' | 'patient' | 'professional'>('Todos')
-  const filtered = USERS.filter(u => (roleFilter === 'Todos' || u.role === roleFilter) && u.name.toLowerCase().includes(search.toLowerCase()))
+  const [roleFilter, setRoleFilter] = useState<'Todos' | Role>('Todos')
+  const [users, setUsers] = useState(USERS)
+  const [showCreate, setShowCreate] = useState(false)
+  const filtered = users.filter(u => (roleFilter === 'Todos' || u.role === roleFilter) && u.name.toLowerCase().includes(search.toLowerCase()))
+
+  const createUser = (name: string, email: string, role: Role) => {
+    setUsers(us => [{ id: Date.now(), name, email, role, plan: 'Free', status: 'Ativo', diags: 0, joined: 'Hoje' }, ...us])
+    setShowCreate(false)
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'var(--gradient-brand)', padding: '20px 20px 24px' }}>
-        <h1 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 12px' }}>Usuários</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h1 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: '#fff', margin: 0 }}>Usuários</h1>
+          <button onClick={() => setShowCreate(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', color: 'var(--teal-800)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+            <Icon name="plus" size={14} color="var(--teal-800)" /> Criar usuário
+          </button>
+        </div>
         <div style={{ position: 'relative', marginBottom: 10 }}>
           <Icon name="search" size={16} color="rgba(255,255,255,0.5)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome..."
             style={{ width: '100%', padding: '11px 14px 11px 40px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#fff' }} />
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {([['Todos', 'Todos'], ['patient', 'Pacientes'], ['professional', 'Profissionais']] as const).map(([v, l]) => (
-            <button key={v} onClick={() => setRoleFilter(v as typeof roleFilter)} style={{ padding: '7px 14px', borderRadius: 999, border: 'none', background: roleFilter === v ? '#fff' : 'rgba(255,255,255,0.15)', color: roleFilter === v ? 'var(--teal-800)' : 'rgba(255,255,255,0.85)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>{l}</button>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
+          {([['Todos', 'Todos'], ['patient', 'Pacientes'], ['professional', 'Profissionais'], ['admin', 'Admins']] as const).map(([v, l]) => (
+            <button key={v} onClick={() => setRoleFilter(v as typeof roleFilter)} style={{ padding: '7px 14px', borderRadius: 999, border: 'none', background: roleFilter === v ? '#fff' : 'rgba(255,255,255,0.15)', color: roleFilter === v ? 'var(--teal-800)' : 'rgba(255,255,255,0.85)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{l}</button>
           ))}
         </div>
       </div>
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.map(u => (
           <Card key={u.id} onClick={() => setView('user-detail')} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
-            <Avatar name={u.name} size={48} />
+            <Avatar name={u.name} size={48} role={avatarRole(u.role)} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{u.name}</div>
               <div style={{ fontSize: 12, color: 'var(--gray-text)', marginBottom: 6 }}>{u.email}</div>
@@ -224,7 +301,9 @@ function UsersList({ setView }: { setView: (v: AdminView) => void }) {
             <Icon name="chevronRight" size={16} color="var(--gray-3)" />
           </Card>
         ))}
+        {filtered.length === 0 && <Empty icon={<Icon name="users" size={26} />} title="Nenhum usuário encontrado" />}
       </div>
+      {showCreate && <CreateUserModal onClose={() => setShowCreate(false)} onCreate={createUser} />}
     </div>
   )
 }
@@ -241,7 +320,7 @@ function UserDetail({ setView }: { setView: (v: AdminView) => void }) {
           <Icon name="chevronLeft" size={14} color="#fff" /> Usuários
         </button>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <Avatar name={u.name} size={56} />
+          <Avatar name={u.name} size={56} role={avatarRole(u.role)} />
           <div>
             <div style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 900, color: '#fff' }}>{u.name}</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>{u.email}</div>
@@ -270,7 +349,11 @@ function UserDetail({ setView }: { setView: (v: AdminView) => void }) {
           {[
             { icon: <Icon name="pencil" size={18} color="var(--teal-800)" />, label: 'Editar dados', bg: 'var(--teal-100)' },
             { icon: <Icon name="key" size={18} color="#F59E0B" />, label: 'Redefinir senha', bg: '#FEF3C7' },
-            { icon: <Icon name="chart" size={18} color="#7C3AED" />, label: 'Ver diagnósticos', bg: '#EDE9FE', action: () => setView('diagnostics') },
+            ...(u.role === 'professional'
+              ? [{ icon: <Icon name="users" size={18} color="#7C3AED" />, label: 'Ver pacientes', bg: '#EDE9FE', action: () => setView('diagnostics') }]
+              : u.role === 'patient'
+              ? [{ icon: <Icon name="chart" size={18} color="#7C3AED" />, label: 'Ver diagnósticos', bg: '#EDE9FE', action: () => setView('diagnostics') }]
+              : []),
           ].map((item, i, arr) => (
             <button key={item.label} onClick={item.action} style={{ width: '100%', display: 'flex', gap: 14, alignItems: 'center', padding: '14px 20px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon}</div>
@@ -299,21 +382,69 @@ function UserDetail({ setView }: { setView: (v: AdminView) => void }) {
 // ─── Diagnostics list ─────────────────────────────────────────────────────────
 function DiagsList({ setView }: { setView: (v: AdminView) => void }) {
   const [filter, setFilter] = useState<'Todos' | 'Revisado' | 'Aguardando revisão'>('Todos')
+  const [selecting, setSelecting] = useState(false)
+  const [selected, setSelected] = useState<number[]>([])
+  const [exported, setExported] = useState(false)
   const filtered = DIAGS.filter(d => filter === 'Todos' || d.status === filter)
+
+  const counts = {
+    total: DIAGS.length,
+    l1: DIAGS.filter(d => d.level === 1).length,
+    l2: DIAGS.filter(d => d.level === 2).length,
+    l3: DIAGS.filter(d => d.level === 3).length,
+    pending: DIAGS.filter(d => d.status !== 'Revisado').length,
+  }
+
+  const toggleSelect = (id: number) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
+  const exitSelecting = () => { setSelecting(false); setSelected([]); setExported(false) }
+  const exportDataset = () => { setExported(true); setTimeout(() => { setExported(false); exitSelecting() }, 1400) }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'var(--gradient-brand)', padding: '20px 20px 24px' }}>
-        <h1 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 12px' }}>Diagnósticos</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h1 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: '#fff', margin: 0 }}>Diagnósticos</h1>
+          <button onClick={() => selecting ? exitSelecting() : setSelecting(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: selecting ? '#fff' : 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: '8px 14px', color: selecting ? 'var(--teal-800)' : '#fff', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+            {selecting ? 'Cancelar' : 'Selecionar'}
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
           {(['Todos', 'Aguardando revisão', 'Revisado'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{ padding: '7px 14px', borderRadius: 999, border: 'none', background: filter === f ? '#fff' : 'rgba(255,255,255,0.15)', color: filter === f ? 'var(--teal-800)' : 'rgba(255,255,255,0.85)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{f}</button>
           ))}
         </div>
       </div>
+
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Analytics */}
+        <Card>
+          <SectionHeader title="Análise geral" sub={`${counts.total} diagnósticos · ${counts.pending} aguardando revisão`} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+            {[
+              { label: 'Normal', v: counts.l1, color: levelColor(1) },
+              { label: 'Íntima', v: counts.l2, color: levelColor(2) },
+              { label: 'Social', v: counts.l3, color: levelColor(3) },
+            ].map(s => (
+              <div key={s.label} style={{ background: s.color + '12', border: `1px solid ${s.color}30`, borderRadius: 12, padding: '10px 8px', textAlign: 'center' }}>
+                <div style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.v}</div>
+                <div style={{ fontSize: 10, color: 'var(--gray-text)', marginTop: 4 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
         {filtered.map(d => (
-          <Card key={d.id} onClick={() => setView('diag-detail')} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
+          <Card key={d.id} onClick={() => selecting ? toggleSelect(d.id) : setView('diag-detail')} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
+            {selecting && (
+              <div style={{
+                width: 22, height: 22, borderRadius: 7, flexShrink: 0,
+                border: `1.5px solid ${selected.includes(d.id) ? 'var(--teal-800)' : 'var(--border)'}`,
+                background: selected.includes(d.id) ? 'var(--teal-800)' : '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {selected.includes(d.id) && <Icon name="check" size={13} color="#fff" strokeWidth={3} />}
+              </div>
+            )}
             <Avatar name={d.user} size={44} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)' }}>{d.user}</div>
@@ -321,13 +452,23 @@ function DiagsList({ setView }: { setView: (v: AdminView) => void }) {
               <Badge label={d.status} status={statusBadge(d.status)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-              {d.score !== null && <span style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 20, color: diagColor(d.score) }}>{d.score}</span>}
+              <LevelChip level={d.level} size="sm" />
               {d.aiConf !== null && <span style={{ fontSize: 11, color: 'var(--gray-text)' }}>IA {d.aiConf}%</span>}
             </div>
-            <Icon name="chevronRight" size={16} color="var(--gray-3)" />
+            {!selecting && <Icon name="chevronRight" size={16} color="var(--gray-3)" />}
           </Card>
         ))}
+        <div style={{ height: selecting ? 76 : 8 }} />
       </div>
+
+      {selecting && (
+        <div style={{ position: 'sticky', bottom: 0, background: '#fff', borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 13, color: 'var(--gray-text)', flex: 1 }}>{selected.length} selecionado{selected.length !== 1 ? 's' : ''}</span>
+          <Btn variant="success" disabled={selected.length === 0} onClick={exportDataset}>
+            <Icon name="document" size={16} color="#fff" /> {exported ? 'Exportado!' : 'Exportar dataset'}
+          </Btn>
+        </div>
+      )}
     </div>
   )
 }
@@ -352,9 +493,9 @@ function DiagDetailAdmin({ setView }: { setView: (v: AdminView) => void }) {
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Card style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'Outfit', fontSize: 13, color: 'var(--gray-text)', marginBottom: 4 }}>Score IA</div>
-            <div style={{ fontFamily: 'Outfit', fontSize: 36, fontWeight: 900, color: diagColor(d.score) }}>{d.score}</div>
-            <div style={{ fontSize: 12, color: 'var(--gray-text)', marginTop: 2 }}>Confiança: {d.aiConf}%</div>
+            <div style={{ fontFamily: 'Outfit', fontSize: 13, color: 'var(--gray-text)', marginBottom: 8 }}>Classificação IA</div>
+            <LevelChip level={d.level} size="lg" />
+            <div style={{ fontSize: 12, color: 'var(--gray-text)', marginTop: 8 }}>Confiança: {d.aiConf}%</div>
           </div>
           <Badge label={d.status} status={statusBadge(d.status)} />
         </Card>
@@ -373,22 +514,15 @@ function DiagDetailAdmin({ setView }: { setView: (v: AdminView) => void }) {
   )
 }
 
-// ─── Content hub (Tips + Notifications + Anamnesis) ───────────────────────────
+// ─── Content hub (Tips) ────────────────────────────────────────────────────────
+// Abas de Avisos e Anamnese removidas por enquanto — Avisos ainda vai ser validado com o time
 function ContentHub({ setView }: { setView: (v: AdminView) => void }) {
-  const [tab, setTab] = useState<ContentTab>('tips')
-  const [anamQuestions, setAnamQuestions] = useState(ANAM_QUESTIONS)
-
-  const toggleAnam = (id: number) => setAnamQuestions(qs => qs.map(q => q.id === id ? { ...q, active: !q.active } : q))
+  const tab: ContentTab = 'tips'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'var(--gradient-brand)', padding: '20px 20px 24px' }}>
-        <h1 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 14px' }}>Conteúdos</h1>
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 4, gap: 2 }}>
-          {([['tips', 'Dicas'], ['notifications', 'Avisos'], ['anamnesis', 'Anamnese']] as [ContentTab, string][]).map(([v, l]) => (
-            <button key={v} onClick={() => setTab(v)} style={{ flex: 1, padding: '9px 6px', borderRadius: 9, border: 'none', background: tab === v ? '#fff' : 'transparent', color: tab === v ? 'var(--teal-800)' : 'rgba(255,255,255,0.8)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer', transition: 'all 0.2s' }}>{l}</button>
-          ))}
-        </div>
+        <h1 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: '#fff', margin: 0 }}>Conteúdos</h1>
       </div>
 
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
@@ -415,57 +549,36 @@ function ContentHub({ setView }: { setView: (v: AdminView) => void }) {
             ))}
           </>
         )}
-
-        {tab === 'notifications' && (
-          <>
-            <Btn full variant="primary" onClick={() => setView('notif-edit')}>
-              <Icon name="megaphone" size={16} color="#fff" /> Novo aviso
-            </Btn>
-            {NOTIFS.map(n => (
-              <Card key={n.id} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }} onClick={() => setView('notif-edit')}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon name="megaphone" size={20} color="#DB2777" />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)' }}>{n.title}</div>
-                  <div style={{ fontSize: 12, color: 'var(--gray-text)', marginBottom: 4 }}>{n.audience}</div>
-                  <div style={{ fontSize: 11, color: 'var(--gray-3)' }}>Enviado: {n.sent}</div>
-                </div>
-                <Icon name="chevronRight" size={14} color="var(--gray-3)" />
-              </Card>
-            ))}
-          </>
-        )}
-
-        {tab === 'anamnesis' && (
-          <>
-            <div style={{ padding: '0 2px 4px' }}>
-              <p style={{ fontSize: 13, color: 'var(--gray-text)', margin: 0 }}>Configure as perguntas do questionário exibido antes do diagnóstico.</p>
-            </div>
-            {anamQuestions.map(q => (
-              <Card key={q.id} style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 9, background: q.active ? 'var(--teal-100)' : 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon name="clipboard" size={16} color={q.active ? 'var(--teal-800)' : 'var(--gray-3)'} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)' }}>{q.label}</div>
-                  <div style={{ fontSize: 11, color: 'var(--gray-text)' }}>{q.type}{q.required ? ' · Obrigatório' : ''}</div>
-                </div>
-                <button onClick={() => toggleAnam(q.id)} style={{ width: 38, height: 22, borderRadius: 999, background: q.active ? 'var(--teal-800)' : '#D1D5DB', border: 'none', display: 'flex', alignItems: 'center', padding: '2px', cursor: 'pointer', transition: 'background 0.2s', justifyContent: q.active ? 'flex-end' : 'flex-start' }}>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                </button>
-              </Card>
-            ))}
-            <Btn variant="secondary" full>
-              <Icon name="plus" size={16} color="var(--teal-800)" /> Adicionar pergunta
-            </Btn>
-          </>
-        )}
         <div style={{ height: 8 }} />
       </div>
     </div>
   )
 }
+
+/* Aba de Avisos — desativada até validar com o time
+function NotificationsTab({ setView }: { setView: (v: AdminView) => void }) {
+  return (
+    <>
+      <Btn full variant="primary" onClick={() => setView('notif-edit')}>
+        <Icon name="megaphone" size={16} color="#fff" /> Novo aviso
+      </Btn>
+      {NOTIFS.map(n => (
+        <Card key={n.id} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }} onClick={() => setView('notif-edit')}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Icon name="megaphone" size={20} color="#DB2777" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)' }}>{n.title}</div>
+            <div style={{ fontSize: 12, color: 'var(--gray-text)', marginBottom: 4 }}>{n.audience}</div>
+            <div style={{ fontSize: 11, color: 'var(--gray-3)' }}>Enviado: {n.sent}</div>
+          </div>
+          <Icon name="chevronRight" size={14} color="var(--gray-3)" />
+        </Card>
+      ))}
+    </>
+  )
+}
+*/
 
 // ─── Tip editor ───────────────────────────────────────────────────────────────
 function TipEditor({ setView }: { setView: (v: AdminView) => void }) {
@@ -516,7 +629,8 @@ function TipEditor({ setView }: { setView: (v: AdminView) => void }) {
   )
 }
 
-// ─── Notification editor ──────────────────────────────────────────────────────
+// ─── Notification editor ── desativado até validar com o time ────────────────
+/*
 function NotifEditor({ setView }: { setView: (v: AdminView) => void }) {
   const [title, setTitle] = useState('')
   const [msg, setMsg] = useState('')
@@ -561,6 +675,7 @@ function NotifEditor({ setView }: { setView: (v: AdminView) => void }) {
     </div>
   )
 }
+*/
 
 // ─── Admin profile ────────────────────────────────────────────────────────────
 function AdminProfile({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
@@ -569,7 +684,7 @@ function AdminProfile({ user, onLogout }: { user: AuthUser; onLogout: () => void
       <div style={{ background: 'linear-gradient(160deg, #0a3d4a 0%, #0B6B82 55%, #0d8aa6 100%)', padding: '32px 20px 52px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', bottom: -30, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(22,163,74,0.1)', filter: 'blur(20px)' }} />
         <div style={{ position: 'relative' }}>
-          <Avatar name={user.name} size={72} />
+          <Avatar name={user.name} size={72} role="admin" />
           <div style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 900, color: '#fff', marginTop: 10 }}>{user.name}</div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{user.email}</div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
@@ -626,7 +741,6 @@ export default function AdminApp({ user, onLogout }: { user: AuthUser; onLogout:
         {view === 'diag-detail' && <DiagDetailAdmin setView={setView} />}
         {view === 'content'     && <ContentHub setView={setView} />}
         {view === 'tip-edit'    && <TipEditor setView={setView} />}
-        {view === 'notif-edit'  && <NotifEditor setView={setView} />}
         {view === 'profile'     && <AdminProfile user={user} onLogout={onLogout} />}
       </div>
       <BottomNav view={view} setView={setView} />

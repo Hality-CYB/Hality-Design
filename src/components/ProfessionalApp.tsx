@@ -1,30 +1,57 @@
 import { useState } from 'react'
 import type { AuthUser } from './AuthFlow'
-import { Btn, Card, Badge, ScoreMeter, Empty, Avatar, SectionHeader, StatCard, Textarea } from './shared/UI'
+import { Btn, Card, Badge, Empty, Avatar, SectionHeader, Textarea } from './shared/UI'
 import { Icon } from './shared/Icons'
 import cybIcon from '@/imports/Icon_CheckYourBreath.png'
 
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'
-type ProfView = 'dashboard' | 'diagnostics' | 'diag-detail' | 'patients' | 'patient-detail' | 'profile'
+type ProfView = 'dashboard' | 'diagnostics' | 'diag-detail' | 'patients' | 'patient-detail' | 'evaluate' | 'profile'
 
-const DIAGS = [
-  { id: 101, patient: 'Ana Paula Ferreira', date: '12/08/2026', score: 68, status: 'Aguardando revisão', aiConf: 87, anam: { fumante: 'Não', escovacao: '2x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Sim' } },
-  { id: 102, patient: 'Julia Costa', date: '10/08/2026', score: null, status: 'Processando', aiConf: null, anam: { fumante: 'Sim', escovacao: '1x ao dia', medicacao: 'Omeprazol', bocaSeca: 'Não' } },
-  { id: 103, patient: 'Carlos Mendes', date: '08/08/2026', score: 28, status: 'Revisado', aiConf: 92, anam: { fumante: 'Não', escovacao: '3x ao dia', medicacao: 'Anti-hipertensivo', bocaSeca: 'Não' } },
-  { id: 104, patient: 'Roberto Souza', date: '05/08/2026', score: 88, status: 'Aguardando revisão', aiConf: 79, anam: { fumante: 'Sim', escovacao: '1x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Sim' } },
-  { id: 105, patient: 'Fernanda Lima', date: '01/08/2026', score: 44, status: 'Revisado', aiConf: 85, anam: { fumante: 'Não', escovacao: '2x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Não' } },
+// ─── Level system (1=Normal, 2=Íntima, 3=Social) ────────────────────────────
+type Level = 1 | 2 | 3
+const levelColor = (l: Level | null) => l === null ? '#6B7280' : l === 1 ? '#16A34A' : l === 2 ? '#FF9500' : '#FF3B30'
+const levelLabel = (l: Level | null) => l === null ? 'Pendente' : l === 1 ? 'Hálito Normal' : l === 2 ? 'Halitose Íntima' : 'Mau Hálito Social'
+const levelBadge = (l: Level | null): BadgeStatus => l === null ? 'pending' : l === 1 ? 'success' : l === 2 ? 'warning' : 'danger'
+
+function LevelChip({ level, size = 'md' }: { level: Level | null; size?: 'sm' | 'md' | 'lg' }) {
+  const color = levelColor(level)
+  const label = levelLabel(level)
+  const pad = size === 'sm' ? '4px 10px' : size === 'lg' ? '8px 18px' : '6px 14px'
+  const fs = size === 'sm' ? 11 : size === 'lg' ? 15 : 13
+  return (
+    <span style={{
+      background: color + '18',
+      color,
+      border: `1.5px solid ${color}40`,
+      borderRadius: 999,
+      padding: pad,
+      fontFamily: 'Outfit',
+      fontWeight: 700,
+      fontSize: fs,
+      whiteSpace: 'nowrap',
+      display: 'inline-block',
+    }}>{label}</span>
+  )
+}
+
+const DIAGS: { id: number; patient: string; date: string; level: Level | null; status: string; aiConf: number | null; anam: Record<string, string> }[] = [
+  { id: 101, patient: 'Ana Paula Ferreira', date: '12/08/2026', level: 2, status: 'Aguardando revisão', aiConf: 87, anam: { fumante: 'Não', escovacao: '2x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Sim' } },
+  { id: 102, patient: 'Julia Costa', date: '10/08/2026', level: null, status: 'Processando', aiConf: null, anam: { fumante: 'Sim', escovacao: '1x ao dia', medicacao: 'Omeprazol', bocaSeca: 'Não' } },
+  { id: 103, patient: 'Carlos Mendes', date: '08/08/2026', level: 1, status: 'Revisado', aiConf: 92, anam: { fumante: 'Não', escovacao: '3x ao dia', medicacao: 'Anti-hipertensivo', bocaSeca: 'Não' } },
+  { id: 104, patient: 'Roberto Souza', date: '05/08/2026', level: 3, status: 'Aguardando revisão', aiConf: 79, anam: { fumante: 'Sim', escovacao: '1x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Sim' } },
+  { id: 105, patient: 'Fernanda Lima', date: '01/08/2026', level: 2, status: 'Revisado', aiConf: 85, anam: { fumante: 'Não', escovacao: '2x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Não' } },
 ]
 
-const PATIENTS = [
-  { id: 1, name: 'Ana Paula Ferreira', email: 'ana@email.com', diags: 4, lastDate: '12/08/2026', lastScore: 68 },
-  { id: 2, name: 'Julia Costa', email: 'julia@email.com', diags: 1, lastDate: '10/08/2026', lastScore: null },
-  { id: 3, name: 'Carlos Mendes', email: 'carlos@email.com', diags: 7, lastDate: '08/08/2026', lastScore: 28 },
-  { id: 4, name: 'Roberto Souza', email: 'roberto@email.com', diags: 3, lastDate: '05/08/2026', lastScore: 88 },
-  { id: 5, name: 'Fernanda Lima', email: 'fernanda@email.com', diags: 2, lastDate: '01/08/2026', lastScore: 44 },
+type Patient = { id: number; name: string; email: string; diags: number; lastDate: string; lastLevel: Level | null; pending?: boolean }
+
+const INITIAL_PATIENTS: Patient[] = [
+  { id: 1, name: 'Ana Paula Ferreira', email: 'ana@email.com', diags: 4, lastDate: '12/08/2026', lastLevel: 2 },
+  { id: 2, name: 'Julia Costa', email: 'julia@email.com', diags: 1, lastDate: '10/08/2026', lastLevel: null },
+  { id: 3, name: 'Carlos Mendes', email: 'carlos@email.com', diags: 7, lastDate: '08/08/2026', lastLevel: 1 },
+  { id: 4, name: 'Roberto Souza', email: 'roberto@email.com', diags: 3, lastDate: '05/08/2026', lastLevel: 3 },
+  { id: 5, name: 'Fernanda Lima', email: 'fernanda@email.com', diags: 2, lastDate: '01/08/2026', lastLevel: 2 },
 ]
 
-const diagColor = (s: number | null) => s === null ? 'var(--gray-3)' : s < 33 ? '#16A34A' : s < 66 ? '#F59E0B' : '#DC2626'
-const diagLabel = (s: number | null) => s === null ? '—' : s < 33 ? 'Leve' : s < 66 ? 'Moderada' : 'Severa'
 const statusBadge = (status: string): BadgeStatus => status === 'Revisado' ? 'success' : status === 'Processando' ? 'neutral' : 'pending'
 
 // ─── TopBar ───────────────────────────────────────────────────────────────────
@@ -36,7 +63,7 @@ function TopBar({ user, onProfile }: { user: AuthUser; onProfile: () => void }) 
         <span style={{ fontSize: 10, color: 'var(--gray-text)', fontFamily: 'Outfit', fontWeight: 600 }}>Profissional</span>
       </div>
       <button onClick={onProfile} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-        <Avatar name={user.name} size={34} />
+        <Avatar name={user.name} size={34} role="professional" />
       </button>
     </div>
   )
@@ -50,7 +77,10 @@ function BottomNav({ view, setView }: { view: ProfView; setView: (v: ProfView) =
     { v: 'patients',    icon: <Icon name="users" size={22} />,  label: 'Pacientes' },
     { v: 'profile',     icon: <Icon name="person" size={22} />, label: 'Perfil' },
   ]
-  const active = (v: ProfView) => view === v || (v === 'diagnostics' && view === 'diag-detail') || (v === 'patients' && view === 'patient-detail')
+  const active = (v: ProfView) =>
+    view === v ||
+    (v === 'diagnostics' && view === 'diag-detail') ||
+    (v === 'patients' && (view === 'patient-detail' || view === 'evaluate'))
   return (
     <nav style={{ background: '#fff', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '10px 8px 26px', flexShrink: 0 }}>
       {tabs.map(t => (
@@ -66,7 +96,7 @@ function BottomNav({ view, setView }: { view: ProfView; setView: (v: ProfView) =
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function Dashboard({ user, setView }: { user: AuthUser; setView: (v: ProfView) => void }) {
+function Dashboard({ user, patients, setView }: { user: AuthUser; patients: Patient[]; setView: (v: ProfView) => void }) {
   const pending = DIAGS.filter(d => d.status === 'Aguardando revisão')
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -75,11 +105,11 @@ function Dashboard({ user, setView }: { user: AuthUser; setView: (v: ProfView) =
         <div style={{ position: 'absolute', bottom: -40, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(13,138,166,0.25)', filter: 'blur(60px)', pointerEvents: 'none' }} />
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: '0 0 2px', position: 'relative' }}>Olá,</p>
         <h1 style={{ fontFamily: 'Outfit', fontSize: 24, fontWeight: 900, color: '#fff', margin: '0 0 20px', letterSpacing: -0.5, position: 'relative' }}>{user.name.split(' ').slice(0, 2).join(' ')}</h1>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, position: 'relative' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, position: 'relative', marginBottom: 18 }}>
           {[
             { v: String(pending.length), label: 'para revisar', icon: <Icon name="clock" size={18} color="rgba(255,255,255,0.8)" /> },
             { v: '12', label: 'revisados', icon: <Icon name="checkCircle" size={18} color="rgba(255,255,255,0.8)" /> },
-            { v: String(PATIENTS.length), label: 'pacientes', icon: <Icon name="users" size={18} color="rgba(255,255,255,0.8)" /> },
+            { v: String(patients.length), label: 'pacientes', icon: <Icon name="users" size={18} color="rgba(255,255,255,0.8)" /> },
             { v: String(DIAGS.length), label: 'diagnósticos', icon: <Icon name="beaker" size={18} color="rgba(255,255,255,0.8)" /> },
           ].map((s, i) => (
             <div key={i} style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 16, padding: '14px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -91,6 +121,32 @@ function Dashboard({ user, setView }: { user: AuthUser; setView: (v: ProfView) =
             </div>
           ))}
         </div>
+
+        {/* CTA — avaliar paciente */}
+        <button onClick={() => setView('evaluate')} style={{
+          position: 'relative',
+          width: '100%',
+          background: 'linear-gradient(175.28deg, rgb(68, 191, 173) 8.49%, rgb(9, 76, 94) 82.33%)',
+          boxShadow: '0px 6px 24px 0px rgba(22,163,74,0.35)',
+          borderRadius: 18,
+          border: 'none',
+          padding: '18px 20px',
+          display: 'flex',
+          gap: 14,
+          alignItems: 'center',
+          cursor: 'pointer',
+          overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -12, right: -12, width: 90, height: 90, borderRadius: 45, background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Icon name="camera" size={22} color="#fff" />
+          </div>
+          <div style={{ flex: 1, textAlign: 'left', position: 'relative' }}>
+            <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 16, color: '#fff', lineHeight: '24px' }}>Avaliar paciente</div>
+            <div style={{ fontFamily: 'Inter', fontWeight: 500, fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: '18px', marginTop: 2 }}>Anamnese + captura de imagem</div>
+          </div>
+          <Icon name="chevronRight" size={18} color="rgba(255,255,255,0.8)" />
+        </button>
       </div>
 
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -106,7 +162,7 @@ function Dashboard({ user, setView }: { user: AuthUser; setView: (v: ProfView) =
                     <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{d.patient}</div>
                     <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{d.date}</div>
                   </div>
-                  {d.score !== null && <div style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 900, color: diagColor(d.score) }}>{d.score}</div>}
+                  {d.level !== null && <LevelChip level={d.level} size="sm" />}
                   <Btn variant="primary" size="sm" onClick={() => setView('diag-detail')}>Revisar</Btn>
                 </div>
               ))}
@@ -126,7 +182,7 @@ function Dashboard({ user, setView }: { user: AuthUser; setView: (v: ProfView) =
                   <div style={{ fontSize: 11, color: 'var(--gray-text)' }}>{d.date}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                  {d.score !== null && <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: diagColor(d.score) }}>{d.score}</span>}
+                  {d.level !== null && <LevelChip level={d.level} size="sm" />}
                   <Badge label={d.status} status={statusBadge(d.status)} />
                 </div>
               </div>
@@ -166,8 +222,8 @@ function DiagnosticsList({ setView }: { setView: (v: ProfView) => void }) {
                   <Badge label={d.status} status={statusBadge(d.status)} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                  {d.score !== null
-                    ? <span style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 22, color: diagColor(d.score) }}>{d.score}</span>
+                  {d.level !== null
+                    ? <LevelChip level={d.level} size="sm" />
                     : <Icon name="clock" size={20} color="var(--gray-3)" />}
                   {d.aiConf && <span style={{ fontSize: 11, color: 'var(--gray-text)' }}>IA {d.aiConf}%</span>}
                 </div>
@@ -183,7 +239,7 @@ function DiagnosticsList({ setView }: { setView: (v: ProfView) => void }) {
 // ─── Diagnostic review ────────────────────────────────────────────────────────
 function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
   const d = DIAGS[0]
-  const [classif, setClassif] = useState('')
+  const [classif, setClassif] = useState<Level | ''>('')
   const [obs, setObs] = useState('')
   const [saved, setSaved] = useState(false)
 
@@ -212,15 +268,11 @@ function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
             <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 14, color: 'var(--teal-800)' }}>Resultado da IA</div>
           </div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: 80, height: 80, flexShrink: 0 }}>
-              <ScoreMeter score={d.score!} color={diagColor(d.score)} size={80} />
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 900, color: diagColor(d.score) }}>{d.score}</span>
-                <span style={{ fontSize: 9, color: 'var(--gray-text)' }}>score</span>
-              </div>
+            <div style={{ width: 64, height: 64, borderRadius: 18, background: levelColor(d.level) + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name="scan" size={28} color={levelColor(d.level)} />
             </div>
             <div>
-              <div style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 800, color: diagColor(d.score), marginBottom: 4 }}>Halitose {diagLabel(d.score)}</div>
+              <div style={{ marginBottom: 6 }}><LevelChip level={d.level} size="md" /></div>
               <div style={{ fontSize: 12, color: 'var(--gray-text)', marginBottom: 6 }}>Confiança: {d.aiConf}%</div>
               <div style={{ height: 5, background: 'var(--teal-100)', borderRadius: 999, width: 120, overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${d.aiConf}%`, background: 'var(--teal-800)', borderRadius: 999 }} />
@@ -261,13 +313,15 @@ function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Classificação confirmada</label>
-            <select value={classif} onChange={e => setClassif(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--teal-200)', borderRadius: 12, fontSize: 14, fontFamily: 'Inter', color: 'var(--body)', background: '#fff', outline: 'none' }}>
-              <option value="">Selecionar...</option>
-              <option>Sem halitose</option>
-              <option>Halitose Leve</option>
-              <option>Halitose Moderada</option>
-              <option>Halitose Severa</option>
-            </select>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {([1, 2, 3] as Level[]).map(l => (
+                <button key={l} type="button" onClick={() => setClassif(l)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 12, border: `2px solid ${classif === l ? levelColor(l) : 'var(--border)'}`, background: classif === l ? levelColor(l) + '10' : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: levelColor(l), flexShrink: 0 }} />
+                  <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{l} — {levelLabel(l)}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <Textarea label="Observações e recomendações" value={obs} onChange={setObs} placeholder="Descreva suas observações clínicas..." rows={4} />
           {saved && (
@@ -287,9 +341,9 @@ function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
 }
 
 // ─── Patients list ────────────────────────────────────────────────────────────
-function PatientsList({ setView }: { setView: (v: ProfView) => void }) {
+function PatientsList({ patients, setView }: { patients: Patient[]; setView: (v: ProfView) => void }) {
   const [search, setSearch] = useState('')
-  const filtered = PATIENTS.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+  const filtered = patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
@@ -303,6 +357,9 @@ function PatientsList({ setView }: { setView: (v: ProfView) => void }) {
         </div>
       </div>
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Btn full variant="primary" onClick={() => setView('evaluate')}>
+          <Icon name="camera" size={16} color="#fff" /> Avaliar paciente
+        </Btn>
         {filtered.map(p => (
           <Card key={p.id} onClick={() => setView('patient-detail')} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
             <Avatar name={p.name} size={48} />
@@ -312,7 +369,8 @@ function PatientsList({ setView }: { setView: (v: ProfView) => void }) {
               <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{p.diags} diagnósticos · último {p.lastDate}</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-              {p.lastScore !== null && <span style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 20, color: diagColor(p.lastScore) }}>{p.lastScore}</span>}
+              {p.pending && <Badge label="Cadastro pendente" status="pending" />}
+              {p.lastLevel !== null && <LevelChip level={p.lastLevel} size="sm" />}
               <Icon name="chevronRight" size={16} color="var(--gray-3)" />
             </div>
           </Card>
@@ -323,8 +381,8 @@ function PatientsList({ setView }: { setView: (v: ProfView) => void }) {
 }
 
 // ─── Patient detail ───────────────────────────────────────────────────────────
-function PatientDetail({ setView }: { setView: (v: ProfView) => void }) {
-  const p = PATIENTS[0]
+function PatientDetail({ patients, setView }: { patients: Patient[]; setView: (v: ProfView) => void }) {
+  const p = patients[0]
   const pDiags = DIAGS.filter(d => d.patient === p.name)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
@@ -345,6 +403,9 @@ function PatientDetail({ setView }: { setView: (v: ProfView) => void }) {
         </div>
       </div>
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Btn full variant="primary" onClick={() => setView('evaluate')}>
+          <Icon name="camera" size={16} color="#fff" /> Avaliar este paciente
+        </Btn>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {[{ label: 'Total exames', value: p.diags }, { label: 'Último exame', value: p.lastDate }].map(item => (
             <Card key={item.label} style={{ padding: '14px', textAlign: 'center' }}>
@@ -363,11 +424,310 @@ function PatientDetail({ setView }: { setView: (v: ProfView) => void }) {
               <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14 }}>Diagnóstico #{d.id}</div>
               <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{d.date}</div>
             </div>
-            {d.score !== null && <span style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 18, color: diagColor(d.score) }}>{d.score}</span>}
+            {d.level !== null && <LevelChip level={d.level} size="sm" />}
             <Badge label={d.status} status={statusBadge(d.status)} />
             <Icon name="chevronRight" size={16} color="var(--gray-3)" />
           </Card>
         ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Avaliar paciente (Selecionar → Anamnese → Foto → Revisão) ────────────────
+const EVAL_STEPS = ['Paciente', 'Anamnese', 'Captura', 'Revisão']
+
+function EvaluatePatient({ patients, onAddPatient, setView }: { patients: Patient[]; onAddPatient: (p: Patient) => void; setView: (v: ProfView) => void }) {
+  const [step, setStep] = useState(0)
+  const [search, setSearch] = useState('')
+  const [patient, setPatient] = useState<Patient | null>(null)
+
+  const [addingNew, setAddingNew] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+
+  const [percebe, setPercebe] = useState('')
+  const [escovacao, setEscovacao] = useState('')
+  const [fumante, setFumante] = useState('')
+  const [medicacao, setMedicacao] = useState('')
+  const [higiene, setHigiene] = useState<number | null>(null)
+
+  const [processing, setProcessing] = useState(false)
+  const [aiLevel, setAiLevel] = useState<Level>(2)
+  const [aiConf, setAiConf] = useState(0)
+  const [classif, setClassif] = useState<Level | ''>('')
+  const [obs, setObs] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  const filtered = patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+  const anamPreenchida = percebe && escovacao && fumante && higiene !== null
+  const novoPacienteValido = newName.trim() && newEmail.trim().includes('@')
+
+  const registerPatient = () => {
+    const created: Patient = {
+      id: Date.now(),
+      name: newName.trim(),
+      email: newEmail.trim(),
+      diags: 0,
+      lastDate: '—',
+      lastLevel: null,
+      pending: true,
+    }
+    onAddPatient(created)
+    setPatient(created)
+    setAddingNew(false)
+    setNewName('')
+    setNewEmail('')
+    setNewPhone('')
+    setStep(1)
+  }
+
+  const capture = () => {
+    setProcessing(true)
+    const simLevel = ((Math.floor(Math.random() * 3) + 1) as Level)
+    const simConf = 78 + Math.floor(Math.random() * 18)
+    setTimeout(() => {
+      setAiLevel(simLevel)
+      setAiConf(simConf)
+      setClassif(simLevel)
+      setProcessing(false)
+      setStep(3)
+    }, 1400)
+  }
+
+  const back = () => {
+    if (step === 0 && addingNew) return setAddingNew(false)
+    return step > 0 ? setStep(s => s - 1) : setView('dashboard')
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
+      <div style={{ background: '#fff', padding: '14px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={back} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--teal-800)', display: 'flex', padding: 4, flexShrink: 0 }}>
+          <Icon name="chevronLeft" size={18} />
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+          {EVAL_STEPS.map((s, i) => (
+            <div key={s} style={{ display: 'flex', alignItems: 'center', flex: i < EVAL_STEPS.length - 1 ? 1 : 'unset' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: i < step ? 'var(--green-600)' : i === step ? 'var(--teal-800)' : 'var(--border)', color: i <= step ? '#fff' : 'var(--gray-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Outfit', fontWeight: 800, fontSize: 10, flexShrink: 0 }}>
+                  {i < step ? '✓' : i + 1}
+                </div>
+                <span style={{ fontSize: 8, color: i <= step ? 'var(--teal-800)' : 'var(--gray-3)', fontWeight: i <= step ? 700 : 400, whiteSpace: 'nowrap' }}>{s}</span>
+              </div>
+              {i < EVAL_STEPS.length - 1 && <div style={{ flex: 1, height: 1.5, background: i < step ? 'var(--green-600)' : 'var(--border)', margin: '0 3px 12px' }} />}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
+        {/* 0 — Selecionar paciente */}
+        {step === 0 && !addingNew && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 800, color: 'var(--body)', margin: '0 0 4px' }}>Selecionar paciente</h2>
+              <p style={{ fontSize: 13, color: 'var(--gray-text)', margin: 0 }}>Quem você vai avaliar agora?</p>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <Icon name="search" size={16} color="var(--gray-3)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar paciente..."
+                style={{ width: '100%', padding: '12px 14px 12px 40px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: 'var(--body)', background: '#fff' }} />
+            </div>
+            <button type="button" onClick={() => setAddingNew(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 12, border: '1.5px dashed var(--teal-800)', background: 'var(--teal-100)', cursor: 'pointer' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-800)', flexShrink: 0 }}>
+                <Icon name="plus" size={16} />
+              </div>
+              <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--teal-800)' }}>Cadastrar novo paciente</span>
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {filtered.map(p => (
+                <Card key={p.id} onClick={() => { setPatient(p); setStep(1) }} hover style={{ cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <Avatar name={p.name} size={40} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{p.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{p.diags} diagnósticos</div>
+                  </div>
+                  {p.pending && <Badge label="Cadastro pendente" status="pending" />}
+                  <Icon name="chevronRight" size={16} color="var(--gray-3)" />
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 0b — Cadastrar novo paciente */}
+        {step === 0 && addingNew && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button onClick={() => setAddingNew(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--teal-800)', display: 'flex', padding: 4 }}>
+                <Icon name="chevronLeft" size={18} />
+              </button>
+              <div>
+                <h2 style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 800, color: 'var(--body)', margin: '0 0 2px' }}>Novo paciente</h2>
+                <p style={{ fontSize: 13, color: 'var(--gray-text)', margin: 0 }}>Cadastro simples pra começar a avaliação agora</p>
+              </div>
+            </div>
+            <Card>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 6, fontFamily: 'Outfit' }}>Nome completo *</label>
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nome do paciente"
+                style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: 'var(--body)', marginBottom: 14, boxSizing: 'border-box' }} />
+
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 6, fontFamily: 'Outfit' }}>E-mail *</label>
+              <input value={newEmail} onChange={e => setNewEmail(e.target.value)} type="email" placeholder="paciente@email.com"
+                style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: 'var(--body)', marginBottom: 14, boxSizing: 'border-box' }} />
+
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 6, fontFamily: 'Outfit' }}>Telefone</label>
+              <input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="(11) 99999-9999"
+                style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: 'var(--body)', boxSizing: 'border-box' }} />
+            </Card>
+            <div style={{ background: 'rgba(11,107,130,0.06)', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <Icon name="info" size={15} color="var(--teal-800)" style={{ flexShrink: 0, marginTop: 1 }} />
+              <span style={{ fontSize: 12, color: 'var(--gray-text)', lineHeight: 1.5 }}>O paciente vai receber um e-mail com um link pra completar o cadastro dele (senha, telefone etc.) depois — por enquanto isso ainda não está implementado, é só o cadastro básico pra liberar a avaliação.</span>
+            </div>
+            <Btn full size="lg" disabled={!novoPacienteValido} onClick={registerPatient}>Cadastrar e continuar</Btn>
+          </div>
+        )}
+
+        {/* 1 — Anamnese */}
+        {step === 1 && patient && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <Avatar name={patient.name} size={36} />
+              <div>
+                <h2 style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 800, color: 'var(--body)', margin: 0 }}>Anamnese</h2>
+                <p style={{ fontSize: 12, color: 'var(--gray-text)', margin: 0 }}>{patient.name}</p>
+              </div>
+            </div>
+
+            <Card>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 8, fontFamily: 'Outfit' }}>Paciente percebe mau hálito?</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
+                {['Sim', 'Não'].map(opt => (
+                  <button key={opt} type="button" onClick={() => setPercebe(opt)} style={{ padding: '12px', borderRadius: 12, border: `2px solid ${percebe === opt ? 'var(--teal-800)' : 'var(--border)'}`, background: percebe === opt ? 'var(--teal-100)' : '#fff', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: percebe === opt ? 'var(--teal-800)' : 'var(--body)', cursor: 'pointer' }}>{opt}</button>
+                ))}
+              </div>
+
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 8, fontFamily: 'Outfit' }}>Frequência de escovação</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
+                {['1x ao dia', '2x ao dia', '3x ao dia', 'Mais de 3x'].map(opt => (
+                  <button key={opt} type="button" onClick={() => setEscovacao(opt)} style={{ padding: '11px 14px', borderRadius: 10, border: `2px solid ${escovacao === opt ? 'var(--teal-800)' : 'var(--border)'}`, background: escovacao === opt ? 'var(--teal-100)' : '#fff', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13, color: escovacao === opt ? 'var(--teal-800)' : 'var(--body)', cursor: 'pointer', textAlign: 'left' }}>{opt}</button>
+                ))}
+              </div>
+
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 8, fontFamily: 'Outfit' }}>Fumante?</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
+                {['Sim', 'Não'].map(opt => (
+                  <button key={opt} type="button" onClick={() => setFumante(opt)} style={{ padding: '12px', borderRadius: 12, border: `2px solid ${fumante === opt ? 'var(--teal-800)' : 'var(--border)'}`, background: fumante === opt ? 'var(--teal-100)' : '#fff', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: fumante === opt ? 'var(--teal-800)' : 'var(--body)', cursor: 'pointer' }}>{opt}</button>
+                ))}
+              </div>
+
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 8, fontFamily: 'Outfit' }}>Medicação em uso</label>
+              <input value={medicacao} onChange={e => setMedicacao(e.target.value)} placeholder="Nenhuma / nome do medicamento"
+                style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: 'var(--body)', marginBottom: 18, boxSizing: 'border-box' }} />
+
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 8, fontFamily: 'Outfit' }}>Higiene bucal (1 a 5)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button key={n} type="button" onClick={() => setHigiene(n)} style={{ flex: 1, height: 44, borderRadius: 12, border: `2px solid ${higiene === n ? 'var(--teal-800)' : 'var(--border)'}`, background: higiene === n ? 'var(--teal-800)' : '#fff', color: higiene === n ? '#fff' : 'var(--body)', fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>{n}</button>
+                ))}
+              </div>
+            </Card>
+
+            <Btn full size="lg" disabled={!anamPreenchida} onClick={() => setStep(2)}>Continuar</Btn>
+          </div>
+        )}
+
+        {/* 2 — Foto */}
+        {step === 2 && patient && !processing && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 800, color: 'var(--body)', margin: '0 0 4px' }}>Capturar imagem</h2>
+              <p style={{ fontSize: 13, color: 'var(--gray-text)' }}>Foto do dorso da língua — pode usar câmera intraoral</p>
+            </div>
+            <div style={{ background: '#0a3d4a', borderRadius: 20, aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 70%, rgba(22,163,74,0.15), transparent 60%)' }} />
+              <div style={{ width: '70%', aspectRatio: '1.4', borderRadius: 30, border: '1.5px dashed rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                {[['topLeft', 'top', 'left'], ['topRight', 'top', 'right'], ['bottomLeft', 'bottom', 'left'], ['bottomRight', 'bottom', 'right']].map(([k, v1, h1]) => (
+                  <div key={k} style={{ position: 'absolute', [v1]: -1, [h1]: -1, width: 20, height: 20, [v1 === 'top' ? 'borderTop' : 'borderBottom']: '3px solid #4ade80', [h1 === 'left' ? 'borderLeft' : 'borderRight']: '3px solid #4ade80', borderRadius: `${v1 === 'top' && h1 === 'left' ? '8px 0 0 0' : v1 === 'top' ? '0 8px 0 0' : h1 === 'left' ? '0 0 0 8px' : '0 0 8px 0'}` }} />
+                ))}
+                <div style={{ width: '60%', height: '40%', background: 'rgba(255,255,255,0.04)', borderRadius: 99, border: '1px solid rgba(255,255,255,0.1)' }} />
+              </div>
+            </div>
+            <Btn full size="lg" variant="success" onClick={capture}>
+              <Icon name="camera" size={18} color="#fff" /> Capturar foto
+            </Btn>
+          </div>
+        )}
+
+        {/* 2b — Processando */}
+        {step === 2 && processing && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '60px 0', gap: 24 }}>
+            <div style={{ position: 'relative', width: 64, height: 64 }}>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--teal-800)', animation: 'spin 0.85s linear infinite' }} />
+            </div>
+            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+            <div>
+              <h2 style={{ fontFamily: 'Outfit', fontSize: 17, fontWeight: 800, color: 'var(--body)', margin: '0 0 6px' }}>Analisando imagem</h2>
+              <p style={{ fontSize: 13, color: 'var(--gray-text)' }}>A IA está processando o pré-diagnóstico</p>
+            </div>
+          </div>
+        )}
+
+        {/* 3 — Revisão */}
+        {step === 3 && patient && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <Card style={{ background: 'linear-gradient(135deg,rgba(11,107,130,0.05),rgba(22,163,74,0.04))', border: '1px solid rgba(11,107,130,0.12)' }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--teal-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-800)' }}>
+                  <Icon name="sparkles" size={16} />
+                </div>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 14, color: 'var(--teal-800)' }}>Resultado da IA — {patient.name}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 18, background: levelColor(aiLevel) + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon name="scan" size={28} color={levelColor(aiLevel)} />
+                </div>
+                <div>
+                  <div style={{ marginBottom: 6 }}><LevelChip level={aiLevel} size="md" /></div>
+                  <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>Confiança: {aiConf}%</div>
+                </div>
+              </div>
+            </Card>
+
+            <Card style={{ border: '2px solid var(--teal-800)' }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--teal-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-800)' }}>
+                  <Icon name="medical" size={16} />
+                </div>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: 'var(--teal-800)' }}>Sua avaliação</div>
+              </div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 8, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Classificação confirmada</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                {([1, 2, 3] as Level[]).map(l => (
+                  <button key={l} type="button" onClick={() => setClassif(l)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 12, border: `2px solid ${classif === l ? levelColor(l) : 'var(--border)'}`, background: classif === l ? levelColor(l) + '10' : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: levelColor(l), flexShrink: 0 }} />
+                    <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{l} — {levelLabel(l)}</span>
+                  </button>
+                ))}
+              </div>
+              <Textarea label="Observações e recomendações" value={obs} onChange={setObs} placeholder="Descreva suas observações clínicas..." rows={4} />
+              {saved && (
+                <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', borderRadius: 12, padding: '10px 14px', color: '#065F46', fontSize: 13, fontWeight: 600, marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name="checkCircle" size={16} color="#065F46" /> Diagnóstico salvo e enviado ao paciente!
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                <Btn variant="secondary" onClick={() => setView('dashboard')}>Cancelar</Btn>
+                <Btn full variant="success" disabled={!classif} onClick={() => setSaved(true)}><Icon name="check" size={16} color="#fff" /> Salvar diagnóstico</Btn>
+              </div>
+            </Card>
+            {saved && <Btn full onClick={() => setView('patients')}>Concluir e ver pacientes</Btn>}
+            <div style={{ height: 8 }} />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -379,7 +739,7 @@ function ProfProfile({ user, onLogout }: { user: AuthUser; onLogout: () => void 
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'linear-gradient(160deg, #0a3d4a 0%, #0B6B82 55%, #0d8aa6 100%)', padding: '32px 20px 56px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(22,163,74,0.12)', filter: 'blur(20px)' }} />
-        <Avatar name={user.name} size={72} />
+        <Avatar name={user.name} size={72} role="professional" />
         <div style={{ marginTop: 12 }}>
           <div style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 900, color: '#fff' }}>{user.name}</div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Profissional · {user.email}</div>
@@ -423,19 +783,23 @@ function ProfProfile({ user, onLogout }: { user: AuthUser; onLogout: () => void 
 // ─── Shell ────────────────────────────────────────────────────────────────────
 export default function ProfessionalApp({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
   const [view, setView] = useState<ProfView>('dashboard')
+  const [patients, setPatients] = useState<Patient[]>(INITIAL_PATIENTS)
+
+  const addPatient = (p: Patient) => setPatients(prev => [p, ...prev])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
-      <TopBar user={user} onProfile={() => setView('profile')} />
+      {view !== 'evaluate' && <TopBar user={user} onProfile={() => setView('profile')} />}
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
-        {view === 'dashboard'     && <Dashboard user={user} setView={setView} />}
+        {view === 'dashboard'     && <Dashboard user={user} patients={patients} setView={setView} />}
         {view === 'diagnostics'   && <DiagnosticsList setView={setView} />}
         {view === 'diag-detail'   && <DiagnosticReview setView={setView} />}
-        {view === 'patients'      && <PatientsList setView={setView} />}
-        {view === 'patient-detail'&& <PatientDetail setView={setView} />}
+        {view === 'patients'      && <PatientsList patients={patients} setView={setView} />}
+        {view === 'patient-detail'&& <PatientDetail patients={patients} setView={setView} />}
+        {view === 'evaluate'      && <EvaluatePatient patients={patients} onAddPatient={addPatient} setView={setView} />}
         {view === 'profile'       && <ProfProfile user={user} onLogout={onLogout} />}
       </div>
-      <BottomNav view={view} setView={setView} />
+      {view !== 'evaluate' && <BottomNav view={view} setView={setView} />}
     </div>
   )
 }

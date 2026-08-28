@@ -206,16 +206,43 @@ export function Loading({ label = 'Carregando...' }: { label?: string }) {
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
-export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+export function Avatar({ name, size = 36, role }: { name: string; size?: number; role?: 'professional' | 'admin' }) {
+  const badgeSize = Math.max(14, Math.round(size * 0.32))
+  const badgeBg = role === 'admin' ? 'linear-gradient(160deg,#D97706,#92400E)' : 'linear-gradient(160deg,#2563EB,#1E40AF)'
   return (
-    <div style={{
-      width: size, height: size, borderRadius: size > 44 ? 18 : '50%',
-      background: 'linear-gradient(160deg,#0B6B82,#0d8aa6)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', fontFamily: 'Outfit', fontWeight: 800,
-      fontSize: size * 0.38, flexShrink: 0,
-    }}>
-      {name.charAt(0).toUpperCase()}
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <div style={{
+        width: size, height: size, borderRadius: size > 44 ? 18 : '50%',
+        background: 'linear-gradient(160deg,#0B6B82,#0d8aa6)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#fff', fontFamily: 'Outfit', fontWeight: 800,
+        fontSize: size * 0.38,
+      }}>
+        {name.charAt(0).toUpperCase()}
+      </div>
+      {role && (
+        <div style={{
+          position: 'absolute', bottom: -2, right: -2,
+          width: badgeSize, height: badgeSize, borderRadius: '50%',
+          background: badgeBg,
+          border: '2px solid #fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {role === 'professional' ? (
+            <svg width={badgeSize * 0.6} height={badgeSize * 0.6} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+              <path d="M11 2v2" />
+              <path d="M5 2v2" />
+              <path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1" />
+              <path d="M8 15a6 6 0 0 0 12 0v-3" />
+              <circle cx="20" cy="10" r="2" />
+            </svg>
+          ) : (
+            <svg width={badgeSize * 0.6} height={badgeSize * 0.6} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+              <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+          )}
+        </div>
+      )}
     </div>
   )
 }

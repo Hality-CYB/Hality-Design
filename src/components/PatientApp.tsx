@@ -693,6 +693,9 @@ function Profile({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'var(--gradient-brand)', padding: '32px 20px 52px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(22,163,74,0.12)', filter: 'blur(20px)' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, position: 'relative' }}>
+          <Avatar name={user.name} size={72} />
+        </div>
         <div style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 900, color: '#fff', marginBottom: 4 }}>{user.name}</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Usuário Free · {user.email}</div>
       </div>
