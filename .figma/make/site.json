@@ -1,0 +1,10 @@
+{
+  "description": "Streamline dental practice management with an intuitive platform for appointment scheduling, patient records, and treatment tracking, enhancing efficiency for dentists.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
