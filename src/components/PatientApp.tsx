@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AuthUser } from './AuthFlow'
 import { Btn, Card, Badge, Empty, Modal, Alert, Avatar, PageHero, SectionHeader } from './shared/UI'
 import { Icon } from './shared/Icons'
@@ -747,11 +747,16 @@ function Profile({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
 // ─── Shell ─────────────────────────────────────────────────────────────────────
 export default function PatientApp({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
   const [view, setView] = useState<View>('home')
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0)
+  }, [view])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
       {view !== 'home' && <TopBar />}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
         {view === 'home' && <Home user={user} setView={setView} />}
         {view === 'diagnosis-flow' && <DiagnosisFlow setView={setView} />}
         {view === 'diagnostics' && <Diagnostics setView={setView} />}
