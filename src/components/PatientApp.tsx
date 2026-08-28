@@ -96,7 +96,7 @@ function TopBar() {
     <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '1px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
       <img src={cybIcon} alt="Check Your Breath" style={{ height: 45, objectFit: 'contain' }} />
       <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: 'var(--body)' }}>Check Your Breath</span>
-      <div style={{ width: 34 }} />
+      <div style={{ width:50 }} />
     </div>
   )
 }
@@ -162,8 +162,8 @@ function Home({ user, setView }: { user: AuthUser; setView: (v: View) => void })
               <div style={{ flex: 1 }}>
                 <LevelChip level={last.level} size="md" />
                 <div style={{ fontSize: 12, color: 'var(--gray-text)', marginTop: 6, marginBottom: 10 }}>{last.date}</div>
-                <Btn variant="secondary" size="sm" onClick={() => setView('diagnostics')}>Ver detalhes</Btn>
               </div>
+              <Btn variant="secondary" style={{ alignSelf: 'center'}} size="sm" onClick={() => setView('diagnostics')}>Ver detalhes</Btn>
             </div>
           ) : <Empty icon={<Icon name="beaker" size={28} />} title="Nenhum diagnóstico ainda" desc="Faça seu primeiro diagnóstico agora!" />}
         </Card>
@@ -236,7 +236,6 @@ function DiagnosisFlow({ setView }: { setView: (v: View) => void }) {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [aIdx, setAIdx] = useState(0)
-  const [processing, setProcessing] = useState(false)
   const [frontCamera, setFrontCamera] = useState(false)
 
   const next = () => setStep(s => s + 1)
@@ -248,8 +247,7 @@ function DiagnosisFlow({ setView }: { setView: (v: View) => void }) {
   }
 
   const startProcessing = () => {
-    setProcessing(true)
-    setTimeout(() => { setProcessing(false) }, 2500)
+    setTimeout(() => { next(); }, 2500)
   }
 
   return (
@@ -515,7 +513,6 @@ function DiagnosisFlow({ setView }: { setView: (v: View) => void }) {
               <h2 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: 'var(--body)', margin: '0 0 8px' }}>Analisando sua imagem</h2>
               <p style={{ fontSize: 14, color: 'var(--gray-text)', lineHeight: 1.6, maxWidth: 280 }}>Nossa inteligência artificial está processando o diagnóstico. Isso pode levar alguns instantes.</p>
             </div>
-            {!processing && <Btn onClick={next} full>Ver pré-diagnóstico</Btn>}
           </div>
         )}
 
