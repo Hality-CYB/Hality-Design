@@ -51,22 +51,8 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
 
       {/* Hero */}
       <section className="lp-section" style={{ background: 'linear-gradient(135deg, #E0F4F8 0%, #F0F9FF 60%, #D4EDDA 100%)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-          <img src={cybFullLogo} alt="Check Your Breath" style={{ height: 34, objectFit: 'contain' }} />
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-            <button
-              onClick={() => onNavigate('login')}
-              style={{ background: 'none', border: 'none', color: '#0F2A35', fontFamily: 'Outfit', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-            >
-              Entrar
-            </button>
-            <button
-              onClick={() => onNavigate('register')}
-              style={{ background: '#0B6B82', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-            >
-              Cadastrar
-            </button>
-          </div>
+        <div style={{ maxWidth: 1100, margin: '0 auto 0px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <img src={cybFullLogo} alt="Check Your Breath" style={{ height: 150, objectFit: 'contain' }} />
         </div>
         <div className="lp-hero-grid" style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div>

@@ -93,8 +93,8 @@ function BottomNav({ view, setView }: { view: View; setView: (v: View) => void }
 // ─── TopBar ────────────────────────────────────────────────────────────────────
 function TopBar() {
   return (
-    <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-      <img src={cybIcon} alt="Check Your Breath" style={{ height: 24, objectFit: 'contain' }} />
+    <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '1px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      <img src={cybIcon} alt="Check Your Breath" style={{ height: 45, objectFit: 'contain' }} />
       <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: 'var(--body)' }}>Check Your Breath</span>
       <div style={{ width: 34 }} />
     </div>
