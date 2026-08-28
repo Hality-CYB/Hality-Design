@@ -156,15 +156,47 @@ function Dashboard({ user, patients, setView }: { user: AuthUser; patients: Pati
             <SectionHeader title="Aguardando revisão" sub={`${pending.length} diagnósticos`} action={<Btn variant="secondary" size="sm" onClick={() => setView('diagnostics')}>Ver todos</Btn>} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {pending.slice(0, 2).map(d => (
-                <div key={d.id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#FEF3C7', borderRadius: 12, padding: '12px 14px', border: '1px solid #FCD34D' }}>
-                  <Avatar name={d.patient} size={36} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{d.patient}</div>
-                    <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{d.date}</div>
+                <div
+                  key={d.id}
+                  style={{
+                    background: '#FEF3C7',
+                    borderRadius: 12,
+                    padding: '12px 14px',
+                    border: '1px solid #FCD34D'
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <Avatar name={d.patient} size={36} />
+              
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontFamily: 'Outfit',
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: 'var(--body)'
+                      }}>
+                        {d.patient}
+                      </div>
+              
+                      <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>
+                        {d.date}
+                      </div>
+                    </div>
+              
+                    {d.level !== null && (
+                      <LevelChip level={d.level} size="sm" />
+                    )}
                   </div>
-                  {d.level !== null && <LevelChip level={d.level} size="sm" />}
+              
+                  <Btn
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setView('diag-detail')}
+                    style={{ marginTop: 10, width: '100%' }}
+                  >
+                    Revisar
+                  </Btn>
                 </div>
-                <Btn variant="primary" size="sm" onClick={() => setView('diag-detail')}>Revisar</Btn>
               ))}
             </div>
           </Card>
