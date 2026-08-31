@@ -69,6 +69,10 @@ input, textarea, select { font-family: -apple-system, BlinkMacSystemFont, 'Inter
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gray-3); }
 
+/* Scrollable but scrollbar-less — for horizontal filter/tab pill rows */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* ─── Motion ──────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes pageIn {
@@ -93,4 +97,78 @@ input, textarea, select { font-family: -apple-system, BlinkMacSystemFont, 'Inter
   .modal-sheet   { animation: sheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .pop-in        { animation: popIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .stagger-item  { animation: pageIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
+
+/* ─── Desktop app layout ──────────────────────────────────────────────────────
+   Mobile stays exactly as designed (phone-width column, bottom tab bar).
+   From 860px up, the same three apps switch to a sidebar layout that uses
+   the extra width instead of just centering the phone frame. */
+.cyb-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  background: var(--bg);
+}
+.cyb-sidebar { display: none; }
+.cyb-main-col { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
+
+@media (min-width: 860px) {
+  .cyb-shell {
+    flex-direction: row;
+    max-width: 1360px;
+    box-shadow: var(--shadow-lg);
+  }
+  .cyb-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    overflow-y: auto;
+  }
+  .cyb-topbar-mobile,
+  .cyb-bottomnav-mobile { display: none !important; }
+  .cyb-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    align-items: start;
+  }
+  /* Empty state left alone in a grid (list has 0 results) should span the
+     whole row and center itself, not get stuck in the first column. */
+  .cyb-grid > *:only-child { grid-column: 1 / -1; }
+
+  /* "Aguardando revisão" pending item — button sits beside the info on web
+     instead of stacked full-width below it (that stacking is a mobile-only
+     fix for cramped narrow screens). */
+  .pending-review-item { display: flex; align-items: center; gap: 12px; }
+  .pending-review-info { flex: 1; min-width: 0; }
+  .pending-review-btn-wrap button {
+    margin-top: 0 !important;
+    width: auto !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+  }
+
+  /* Content hub tip cards — fixed to the tallest case (4 badges) so every
+     card in the grid is the same size regardless of how many it has. */
+  .content-tip-card { min-height: 199px; }
+  .content-tip-card-body { align-self: flex-start; }
+
+  /* Diagnostics list cards — same idea: fix to the tallest case (IA % line
+     present) so every card in the grid is the same size. */
+  .diag-list-card { min-height: 84px; }
+
+  /* Professional's patient list cards — fixed to the tallest case (pending
+     badge + level chip both present) so every card is the same size. */
+  .patient-list-card { min-height: 96px; }
+
+  /* Admin user list cards — fixed to the tallest case (3 badges wrapping to
+     2 lines) so every card is the same size. */
+  .user-list-card { min-height: 140px; }
+  .user-list-card-body { align-self: flex-start; }
 }

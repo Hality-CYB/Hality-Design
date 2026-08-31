@@ -5,6 +5,7 @@ import { Icon } from './shared/Icons'
 import { TIPS, type Tip } from './shared/tips'
 import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
 import cybIcon from '@/imports/Icon_CheckYourBreath.png'
+import agesLogo from '@/imports/Logo_ages.png'
 
 type View = 'home' | 'diagnosis-flow' | 'diagnostics' | 'profile'
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'
@@ -77,13 +78,15 @@ function LevelChip({ level, size = 'md' }: { level: Level | null; size?: 'sm' | 
 }
 
 // ─── Bottom nav ────────────────────────────────────────────────────────────────
+const NAV_TABS: { v: View; icon: React.ReactNode; label: string }[] = [
+  { v: 'home',           icon: <Icon name="home" size={22} />,   label: 'Home' },
+  { v: 'diagnosis-flow', icon: <Icon name="camera" size={22} />, label: 'Diagnóstico' },
+  { v: 'diagnostics',    icon: <Icon name="chart" size={22} />,  label: 'Progresso' },
+  { v: 'profile',        icon: <Icon name="person" size={22} />, label: 'Usuário' },
+]
+
 function BottomNav({ view, setView }: { view: View; setView: (v: View) => void }) {
-  const tabs: { v: View; icon: React.ReactNode; label: string }[] = [
-    { v: 'home',           icon: <Icon name="home" size={22} />,   label: 'Home' },
-    { v: 'diagnosis-flow', icon: <Icon name="camera" size={22} />, label: 'Diagnóstico' },
-    { v: 'diagnostics',    icon: <Icon name="chart" size={22} />,  label: 'Progresso' },
-    { v: 'profile',        icon: <Icon name="person" size={22} />, label: 'Usuário' },
-  ]
+  const tabs = NAV_TABS
   return (
     <nav style={{ background: 'var(--bg)', padding: '16px 25px 25px', flexShrink: 0 }}>
       <div style={{
@@ -119,9 +122,39 @@ function TopBar() {
   return (
     <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '1px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
       <img src={cybIcon} alt="Check Your Breath" style={{ height: 45, objectFit: 'contain' }} />
-      <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: 'var(--body)' }}>Check Your Breath</span>
+      <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 15, color: 'var(--teal-900)' }}>Check <span style={{ color: 'var(--teal-700)' }}>Your</span> Breath</span>
       <div style={{ width:50 }} />
     </div>
+  )
+}
+
+// ─── Sidebar (desktop) ──────────────────────────────────────────────────────────
+function Sidebar({ user, view, setView }: { user: AuthUser; view: View; setView: (v: View) => void }) {
+  return (
+    <nav className="cyb-sidebar">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 10px 24px' }}>
+        <img src={cybIcon} alt="Check Your Breath" style={{ height: 30, objectFit: 'contain' }} />
+        <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 14, color: 'var(--teal-900)' }}>Check <span style={{ color: 'var(--teal-700)' }}>Your</span> Breath</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+        {NAV_TABS.map(t => {
+          const active = view === t.v
+          return (
+            <button key={t.v} onClick={() => setView(t.v)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 12, border: 'none', background: active ? 'var(--teal-100)' : 'transparent', color: active ? 'var(--teal-800)' : 'var(--gray-text)', cursor: 'pointer', textAlign: 'left' }}>
+              {t.icon}
+              <span style={{ fontFamily: 'Outfit', fontWeight: active ? 700 : 500, fontSize: 14 }}>{t.label}</span>
+            </button>
+          )
+        })}
+      </div>
+      <button onClick={() => setView('profile')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderRadius: 12, border: 'none', background: view === 'profile' ? 'var(--teal-100)' : 'transparent', cursor: 'pointer', textAlign: 'left', marginTop: 8 }}>
+        <Avatar name={user.name} size={34} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
+          <div style={{ fontSize: 11, color: 'var(--gray-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+        </div>
+      </button>
+    </nav>
   )
 }
 
@@ -195,7 +228,7 @@ function Home({ user, setView }: { user: AuthUser; setView: (v: View) => void })
         {/* Tips feed */}
         <div>
           <h3 style={{ fontFamily: 'Outfit', fontSize: 17, fontWeight: 800, color: 'var(--body)', margin: '0 0 12px' }}>Dicas para você</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="cyb-grid" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {TIPS.filter(t => t.pub && t.showOnHome).sort((a, b) => a.order - b.order).map(tip => (
               <TipCard key={tip.id} tip={tip} compact />
             ))}
@@ -760,7 +793,7 @@ function Diagnostics({ setView }: { setView: (v: View) => void }) {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <PageHero title="Meus Diagnósticos" sub={`${DIAGS.length} exames realizados`} />
       {DIAGS.length > 0 && (
-        <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8, overflowX: 'auto' }}>
+        <div className="no-scrollbar" style={{ padding: '14px 16px 0', display: 'flex', gap: 8, overflowX: 'auto' }}>
           {PERIODS.map(p => (
             <button key={p} onClick={() => setPeriod(p)} style={{ padding: '7px 14px', borderRadius: 999, border: `1.5px solid ${period === p ? 'var(--teal-800)' : 'var(--border)'}`, background: period === p ? 'var(--teal-800)' : '#fff', color: period === p ? '#fff' : 'var(--gray-text)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{periodLabel(p, null)}</button>
           ))}
@@ -776,7 +809,7 @@ function Diagnostics({ setView }: { setView: (v: View) => void }) {
           onApply={r => { setCustomRange(r); setPeriod('custom'); setShowCustomModal(false) }}
         />
       )}
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="cyb-grid" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {DIAGS.length === 0
           ? <Empty icon={<Icon name="beaker" size={28} />} title="Nenhum diagnóstico" desc="Faça seu primeiro diagnóstico agora." action={<Btn onClick={() => setView('diagnosis-flow')}>Começar</Btn>} />
           : filtered.length === 0
@@ -889,11 +922,12 @@ function PrivacyModal({ onClose }: { onClose: () => void }) {
 
 // ─── About modal ──────────────────────────────────────────────────────────────
 const CREDITS = [
-  { role: 'Desenvolvimento', name: 'Nome do integrante' },
-  { role: 'Desenvolvimento', name: 'Nome do integrante' },
-  { role: 'Design', name: 'Nome do integrante' },
-  { role: 'Gestão de Produto', name: 'Nome do integrante' },
+  'Igor Marcel', 'Thiago Cardoso', 'Thales Xavier', 'Paulo Augusto',
+  'Arthur Blasi', 'Arthur Mello', 'Eduardo Alcaria', 'Henrique Juchem',
+  'Alice Koepp', 'Lucas Gaelzer', 'João Pedro Ayache', 'Március Moraes',
+  'Luca Mandelli', 'Raul Yugueros', 'Augusto Andrade', 'Vicenzo Marramarco',
 ]
+const ADVISOR = 'Michael Móra'
 
 function AboutModal({ onClose }: { onClose: () => void }) {
   return (
@@ -901,26 +935,27 @@ function AboutModal({ onClose }: { onClose: () => void }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div style={{ textAlign: 'center' }}>
           <img src={cybIcon} alt="Check Your Breath" style={{ height: 56, objectFit: 'contain', margin: '0 auto 10px' }} />
-          <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 17, color: 'var(--body)' }}>Check Your Breath</div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 17, color: 'var(--teal-900)' }}>Check <span style={{ color: 'var(--teal-700)' }}>Your</span> Breath</div>
           <div style={{ fontSize: 12, color: 'var(--gray-text)', marginTop: 2 }}>v1.0.0 · Protótipo</div>
         </div>
 
         <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.6, margin: 0 }}>
           O Check Your Breath é um app de pré-diagnóstico de halitose desenvolvido em parceria com a Hality,
-          como projeto da disciplina AGES (Ambientes e Gestão para o Desenvolvimento de Software) da PUCRS.
+          como projeto da disciplina AGES (Agência Experimental de Engenharia de Software) da PUCRS.
           A proposta é facilitar o acesso a uma triagem inicial do hálito com apoio de inteligência artificial,
           conectando pacientes a profissionais especializados para confirmação clínica.
         </p>
 
-        <div>
-          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 13, color: 'var(--body)', marginBottom: 10 }}>Equipe AGES</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {CREDITS.map((c, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit' }}>{c.name}</span>
-                <span style={{ fontSize: 12, color: 'var(--gray-text)' }}>{c.role}</span>
-              </div>
+        <div style={{ textAlign: 'center' }}>
+          <img src={agesLogo} alt="AGES — Agência Experimental de Engenharia de Software" style={{ height: 26, objectFit: 'contain', margin: '0 auto 12px' }} />
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 10 }}>
+            {CREDITS.map((name, i) => (
+              <span key={i} style={{ fontSize: 12, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit', background: 'var(--bg)', borderRadius: 999, padding: '6px 12px' }}>{name}</span>
             ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'var(--teal-100)', borderRadius: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--teal-800)', fontFamily: 'Outfit' }}>{ADVISOR}</span>
+            <span style={{ fontSize: 11, color: 'var(--teal-800)' }}>· Professor orientador</span>
           </div>
         </div>
 
@@ -1015,17 +1050,20 @@ export default function PatientApp({ user, onLogout }: { user: AuthUser; onLogou
   }, [view])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
-      {view !== 'home' && <TopBar />}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
-        <div key={view} className="page-enter">
-          {view === 'home' && <Home user={user} setView={setView} />}
-          {view === 'diagnosis-flow' && <DiagnosisFlow setView={setView} />}
-          {view === 'diagnostics' && <Diagnostics setView={setView} />}
-          {view === 'profile' && <Profile user={user} onLogout={onLogout} />}
+    <div className="cyb-shell">
+      <Sidebar user={user} view={view} setView={setView} />
+      <div className="cyb-main-col">
+        {view !== 'home' && <div className="cyb-topbar-mobile"><TopBar /></div>}
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
+          <div key={view} className="page-enter">
+            {view === 'home' && <Home user={user} setView={setView} />}
+            {view === 'diagnosis-flow' && <DiagnosisFlow setView={setView} />}
+            {view === 'diagnostics' && <Diagnostics setView={setView} />}
+            {view === 'profile' && <Profile user={user} onLogout={onLogout} />}
+          </div>
         </div>
+        <div className="cyb-bottomnav-mobile"><BottomNav view={view} setView={setView} /></div>
       </div>
-      <BottomNav view={view} setView={setView} />
     </div>
   )
 }

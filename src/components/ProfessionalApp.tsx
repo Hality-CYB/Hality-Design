@@ -5,6 +5,7 @@ import { Icon } from './shared/Icons'
 import { TIPS, type Tip } from './shared/tips'
 import cybIcon from '@/imports/Icon_CheckYourBreath.png'
 import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
+import agesLogo from '@/imports/Logo_ages.png'
 
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'
 type ProfView = 'dashboard' | 'diagnostics' | 'diag-detail' | 'patients' | 'patient-detail' | 'evaluate' | 'profile'
@@ -103,18 +104,54 @@ function TopBar({ user, onProfile }: { user: AuthUser; onProfile: () => void }) 
   )
 }
 
+const NAV_TABS: { v: ProfView; icon: React.ReactNode; label: string }[] = [
+  { v: 'dashboard',   icon: <Icon name="chart" size={22} />,  label: 'Início' },
+  { v: 'diagnostics', icon: <Icon name="beaker" size={22} />, label: 'Diagnósticos' },
+  { v: 'patients',    icon: <Icon name="users" size={22} />,  label: 'Pacientes' },
+  { v: 'profile',     icon: <Icon name="person" size={22} />, label: 'Perfil' },
+]
+const navTabActive = (view: ProfView, v: ProfView) =>
+  view === v ||
+  (v === 'diagnostics' && view === 'diag-detail') ||
+  (v === 'patients' && (view === 'patient-detail' || view === 'evaluate'))
+
+// ─── Sidebar (desktop) ──────────────────────────────────────────────────────────
+function Sidebar({ user, view, setView }: { user: AuthUser; view: ProfView; setView: (v: ProfView) => void }) {
+  return (
+    <nav className="cyb-sidebar">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 10px 24px' }}>
+        <img src={cybIcon} alt="Check Your Breath" style={{ height: 26, objectFit: 'contain' }} />
+        <div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 13, color: 'var(--teal-900)' }}>Check <span style={{ color: 'var(--teal-700)' }}>Your</span> Breath</div>
+          <div style={{ fontSize: 10, color: 'var(--gray-text)', fontFamily: 'Outfit', fontWeight: 600 }}>Profissional</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+        {NAV_TABS.map(t => {
+          const active = navTabActive(view, t.v)
+          return (
+            <button key={t.v} onClick={() => setView(t.v)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 12, border: 'none', background: active ? 'var(--teal-100)' : 'transparent', color: active ? 'var(--teal-800)' : 'var(--gray-text)', cursor: 'pointer', textAlign: 'left' }}>
+              {t.icon}
+              <span style={{ fontFamily: 'Outfit', fontWeight: active ? 700 : 500, fontSize: 14 }}>{t.label}</span>
+            </button>
+          )
+        })}
+      </div>
+      <button onClick={() => setView('profile')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderRadius: 12, border: 'none', background: view === 'profile' ? 'var(--teal-100)' : 'transparent', cursor: 'pointer', textAlign: 'left', marginTop: 8 }}>
+        <Avatar name={user.name} size={34} role="professional" />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
+          <div style={{ fontSize: 11, color: 'var(--gray-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+        </div>
+      </button>
+    </nav>
+  )
+}
+
 // ─── BottomNav ────────────────────────────────────────────────────────────────
 function BottomNav({ view, setView }: { view: ProfView; setView: (v: ProfView) => void }) {
-  const tabs: { v: ProfView; icon: React.ReactNode; label: string }[] = [
-    { v: 'dashboard',   icon: <Icon name="chart" size={22} />,  label: 'Início' },
-    { v: 'diagnostics', icon: <Icon name="beaker" size={22} />, label: 'Diagnósticos' },
-    { v: 'patients',    icon: <Icon name="users" size={22} />,  label: 'Pacientes' },
-    { v: 'profile',     icon: <Icon name="person" size={22} />, label: 'Perfil' },
-  ]
-  const active = (v: ProfView) =>
-    view === v ||
-    (v === 'diagnostics' && view === 'diag-detail') ||
-    (v === 'patients' && (view === 'patient-detail' || view === 'evaluate'))
+  const tabs = NAV_TABS
+  const active = (v: ProfView) => navTabActive(view, v)
   return (
     <nav style={{ background: '#fff', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '10px 8px 26px', flexShrink: 0 }}>
       {tabs.map(t => (
@@ -192,6 +229,7 @@ function Dashboard({ user, patients, setView, onOpenDiag, onEvaluate }: { user: 
               {pending.slice(0, 2).map(d => (
                 <div
                   key={d.id}
+                  className="pending-review-item"
                   style={{
                     background: '#FEF3C7',
                     borderRadius: 12,
@@ -199,9 +237,9 @@ function Dashboard({ user, patients, setView, onOpenDiag, onEvaluate }: { user: 
                     border: '1px solid #FCD34D'
                   }}
                 >
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div className="pending-review-info" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <Avatar name={d.patient} size={36} />
-              
+
                     <div style={{ flex: 1 }}>
                       <div style={{
                         fontFamily: 'Outfit',
@@ -211,24 +249,26 @@ function Dashboard({ user, patients, setView, onOpenDiag, onEvaluate }: { user: 
                       }}>
                         {d.patient}
                       </div>
-              
+
                       <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>
                         {d.date}
                       </div>
                     </div>
-              
+
                     {d.level !== null && (
                       <LevelChip level={d.level} size="sm" />
                     )}
                   </div>
-                  <Btn
-                    variant="primary"
-                    size="sm"
-                    onClick={() => onOpenDiag('dashboard')}
-                    style={{ marginTop: 10, width: '100%' }}
-                  >
-                    Revisar
-                  </Btn>
+                  <div className="pending-review-btn-wrap">
+                    <Btn
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onOpenDiag('dashboard')}
+                      style={{ marginTop: 10, width: '100%' }}
+                    >
+                      Revisar
+                    </Btn>
+                  </div>
                 </div>
               ))}
             </div>
@@ -327,12 +367,12 @@ function DiagnosticsList({ setView, onOpenDiag }: { setView: (v: ProfView) => vo
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'var(--gradient-brand)', padding: '20px 20px 24px' }}>
         <h1 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 12px' }}>Diagnósticos</h1>
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, marginBottom: 8 }}>
+        <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, marginBottom: 8 }}>
           {(['Todos', 'Aguardando revisão', 'Revisado'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{ padding: '7px 14px', borderRadius: 999, border: 'none', background: filter === f ? '#fff' : 'rgba(255,255,255,0.15)', color: filter === f ? 'var(--teal-800)' : 'rgba(255,255,255,0.85)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{f}</button>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+        <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
           {PERIODS.map(p => (
             <button key={p} onClick={() => setPeriod(p)} style={{ padding: '6px 12px', borderRadius: 999, border: `1.5px solid ${period === p ? '#fff' : 'rgba(255,255,255,0.3)'}`, background: period === p ? 'rgba(255,255,255,0.2)' : 'transparent', color: '#fff', fontFamily: 'Outfit', fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{periodLabel(p, null)}</button>
           ))}
@@ -348,16 +388,16 @@ function DiagnosticsList({ setView, onOpenDiag }: { setView: (v: ProfView) => vo
           onApply={r => { setCustomRange(r); setPeriod('custom'); setShowCustomModal(false) }}
         />
       )}
-      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="cyb-grid" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.length === 0
           ? <Empty icon={<Icon name="beaker" size={28} />} title="Nenhum resultado" desc="Ajuste os filtros para ver mais diagnósticos." action={<Btn variant="secondary" onClick={() => { setFilter('Todos'); setPeriod('Todos') }}>Limpar filtros</Btn>} />
           : filtered.map(d => (
-            <Card key={d.id} onClick={() => onOpenDiag('diagnostics')} hover style={{ cursor: 'pointer' }}>
+            <Card key={d.id} className="diag-list-card" onClick={() => onOpenDiag('diagnostics')} hover style={{ cursor: 'pointer' }}>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                 <Avatar name={d.patient} size={44} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{d.patient}</div>
-                  <div style={{ fontSize: 12, color: 'var(--gray-text)', marginBottom: 6 }}>{d.date}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.patient}</div>
+                  <div style={{ fontSize: 12, color: 'var(--gray-text)', marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.date}</div>
                   <Badge label={d.status} status={statusBadge(d.status)} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
@@ -528,21 +568,23 @@ function PatientsList({ patients, onEvaluate, onViewPatient }: { patients: Patie
         <Btn full variant="primary" onClick={() => onEvaluate(null)}>
           <Icon name="camera" size={16} color="#fff" /> Avaliar paciente
         </Btn>
-        {filtered.map(p => (
-          <Card key={p.id} onClick={() => onViewPatient(p)} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
-            <Avatar name={p.name} size={48} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{p.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--gray-text)', marginBottom: 4 }}>{p.email}</div>
-              <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{p.diags} diagnósticos · último {p.lastDate}</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-              {p.pending && <Badge label="Cadastro pendente" status="pending" />}
-              {p.lastLevel !== null && <LevelChip level={p.lastLevel} size="sm" />}
-              <Icon name="chevronRight" size={16} color="var(--gray-3)" />
-            </div>
-          </Card>
-        ))}
+        <div className="cyb-grid" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtered.map(p => (
+            <Card key={p.id} className="patient-list-card" onClick={() => onViewPatient(p)} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
+              <Avatar name={p.name} size={48} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--gray-text)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.email}</div>
+                <div style={{ fontSize: 12, color: 'var(--gray-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.diags} diagnósticos · último {p.lastDate}</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                {p.pending && <Badge label="Cadastro pendente" status="pending" />}
+                {p.lastLevel !== null && <LevelChip level={p.lastLevel} size="sm" />}
+                <Icon name="chevronRight" size={16} color="var(--gray-3)" />
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -901,11 +943,12 @@ function EvaluatePatient({ patients, onAddPatient, setView, initialPatient, onFi
 // ─── Profile ──────────────────────────────────────────────────────────────────
 // ─── About modal ──────────────────────────────────────────────────────────────
 const CREDITS = [
-  { role: 'Desenvolvimento', name: 'Nome do integrante' },
-  { role: 'Desenvolvimento', name: 'Nome do integrante' },
-  { role: 'Design', name: 'Nome do integrante' },
-  { role: 'Gestão de Produto', name: 'Nome do integrante' },
+  'Igor Marcel', 'Thiago Cardoso', 'Thales Xavier', 'Paulo Augusto',
+  'Arthur Blasi', 'Arthur Mello', 'Eduardo Alcaria', 'Henrique Juchem',
+  'Alice Koepp', 'Lucas Gaelzer', 'João Pedro Ayache', 'Március Moraes',
+  'Luca Mandelli', 'Raul Yugueros', 'Augusto Andrade', 'Vicenzo Marramarco',
 ]
+const ADVISOR = 'Michael Móra'
 
 function AboutModal({ onClose }: { onClose: () => void }) {
   return (
@@ -913,26 +956,27 @@ function AboutModal({ onClose }: { onClose: () => void }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div style={{ textAlign: 'center' }}>
           <img src={cybIcon} alt="Check Your Breath" style={{ height: 56, objectFit: 'contain', margin: '0 auto 10px' }} />
-          <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 17, color: 'var(--body)' }}>Check Your Breath</div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 17, color: 'var(--teal-900)' }}>Check <span style={{ color: 'var(--teal-700)' }}>Your</span> Breath</div>
           <div style={{ fontSize: 12, color: 'var(--gray-text)', marginTop: 2 }}>v1.0.0 · Protótipo</div>
         </div>
 
         <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.6, margin: 0 }}>
           O Check Your Breath é um app de pré-diagnóstico de halitose desenvolvido em parceria com a Hality,
-          como projeto da disciplina AGES (Ambientes e Gestão para o Desenvolvimento de Software) da PUCRS.
+          como projeto da disciplina AGES (Agência Experimental de Engenharia de Software) da PUCRS.
           A proposta é facilitar o acesso a uma triagem inicial do hálito com apoio de inteligência artificial,
           conectando pacientes a profissionais especializados para confirmação clínica.
         </p>
 
-        <div>
-          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 13, color: 'var(--body)', marginBottom: 10 }}>Equipe AGES</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {CREDITS.map((c, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit' }}>{c.name}</span>
-                <span style={{ fontSize: 12, color: 'var(--gray-text)' }}>{c.role}</span>
-              </div>
+        <div style={{ textAlign: 'center' }}>
+          <img src={agesLogo} alt="AGES — Agência Experimental de Engenharia de Software" style={{ height: 26, objectFit: 'contain', margin: '0 auto 12px' }} />
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 10 }}>
+            {CREDITS.map((name, i) => (
+              <span key={i} style={{ fontSize: 12, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit', background: 'var(--bg)', borderRadius: 999, padding: '6px 12px' }}>{name}</span>
             ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'var(--teal-100)', borderRadius: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--teal-800)', fontFamily: 'Outfit' }}>{ADVISOR}</span>
+            <span style={{ fontSize: 11, color: 'var(--teal-800)' }}>· Professor orientador</span>
           </div>
         </div>
 
@@ -1089,20 +1133,23 @@ export default function ProfessionalApp({ user, onLogout }: { user: AuthUser; on
   const openPatient = (p: Patient) => { setViewedPatient(p); setView('patient-detail') }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
-      {view !== 'evaluate' && <TopBar user={user} onProfile={() => setView('profile')} />}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
-        <div key={view} className="page-enter">
-          {view === 'dashboard'     && <Dashboard user={user} patients={patients} setView={setView} onOpenDiag={openDiag} onEvaluate={openEvaluate} />}
-          {view === 'diagnostics'   && <DiagnosticsList setView={setView} onOpenDiag={openDiag} />}
-          {view === 'diag-detail'   && <DiagnosticReview setView={setView} backView={diagBackView} />}
-          {view === 'patients'      && <PatientsList patients={patients} onEvaluate={openEvaluate} onViewPatient={openPatient} />}
-          {view === 'patient-detail'&& <PatientDetail patient={viewedPatient} setView={setView} onOpenDiag={openDiag} onEvaluate={openEvaluate} />}
-          {view === 'evaluate'      && <EvaluatePatient patients={patients} onAddPatient={addPatient} setView={setView} initialPatient={evalPatient} onFinishToPatient={openPatient} />}
-          {view === 'profile'       && <ProfProfile user={user} onLogout={onLogout} />}
+    <div className="cyb-shell">
+      {view !== 'evaluate' && <Sidebar user={user} view={view} setView={setView} />}
+      <div className="cyb-main-col">
+        {view !== 'evaluate' && <div className="cyb-topbar-mobile"><TopBar user={user} onProfile={() => setView('profile')} /></div>}
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
+          <div key={view} className="page-enter">
+            {view === 'dashboard'     && <Dashboard user={user} patients={patients} setView={setView} onOpenDiag={openDiag} onEvaluate={openEvaluate} />}
+            {view === 'diagnostics'   && <DiagnosticsList setView={setView} onOpenDiag={openDiag} />}
+            {view === 'diag-detail'   && <DiagnosticReview setView={setView} backView={diagBackView} />}
+            {view === 'patients'      && <PatientsList patients={patients} onEvaluate={openEvaluate} onViewPatient={openPatient} />}
+            {view === 'patient-detail'&& <PatientDetail patient={viewedPatient} setView={setView} onOpenDiag={openDiag} onEvaluate={openEvaluate} />}
+            {view === 'evaluate'      && <EvaluatePatient patients={patients} onAddPatient={addPatient} setView={setView} initialPatient={evalPatient} onFinishToPatient={openPatient} />}
+            {view === 'profile'       && <ProfProfile user={user} onLogout={onLogout} />}
+          </div>
         </div>
+        {view !== 'evaluate' && <div className="cyb-bottomnav-mobile"><BottomNav view={view} setView={setView} /></div>}
       </div>
-      {view !== 'evaluate' && <BottomNav view={view} setView={setView} />}
     </div>
   )
 }

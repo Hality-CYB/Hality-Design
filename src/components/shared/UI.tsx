@@ -116,10 +116,11 @@ export function Textarea({ label, value, onChange, placeholder, rows = 4 }: Text
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
-interface CardProps { children: ReactNode; style?: CSSProperties; onClick?: () => void; hover?: boolean }
-export function Card({ children, style, onClick, hover }: CardProps) {
+interface CardProps { children: ReactNode; style?: CSSProperties; onClick?: () => void; hover?: boolean; className?: string }
+export function Card({ children, style, onClick, hover, className }: CardProps) {
   return (
     <div
+      className={className}
       onClick={onClick}
       style={{ background: '#fff', borderRadius: 18, padding: 20, boxShadow: 'var(--shadow-sm)', cursor: onClick ? 'pointer' : undefined, transform: 'translateY(0)', transition: 'box-shadow 0.2s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)', ...style }}
       onMouseEnter={e => { if (hover || onClick) { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'var(--shadow-md)'; el.style.transform = 'translateY(-2px)' } }}
