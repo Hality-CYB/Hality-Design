@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { ReactNode, CSSProperties } from 'react'
+import { Icon } from './Icons'
 
 // ─── Btn ──────────────────────────────────────────────────────────────────────
 type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
@@ -36,14 +39,15 @@ export function Btn({ children, variant = 'primary', onClick, type = 'button', d
         cursor: disabled ? 'not-allowed' : 'pointer',
         width: full ? '100%' : undefined,
         opacity: disabled ? 0.45 : 1,
-        transition: 'all 0.15s',
+        transform: 'scale(1)',
+        transition: 'opacity 0.15s, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s',
         ...btnStyles[variant],
         ...sizeStyles[size],
         ...style,
       }}
-      onMouseDown={e => { if (!disabled) (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
-      onMouseUp={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = disabled ? '0.45' : '1' }}
+      onMouseDown={e => { if (!disabled) { const el = e.currentTarget as HTMLElement; el.style.opacity = '0.85'; el.style.transform = 'scale(0.96)' } }}
+      onMouseUp={e => { const el = e.currentTarget as HTMLElement; el.style.opacity = '1'; el.style.transform = 'scale(1)' }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.opacity = disabled ? '0.45' : '1'; el.style.transform = 'scale(1)' }}
     >
       {children}
     </button>
@@ -117,9 +121,9 @@ export function Card({ children, style, onClick, hover }: CardProps) {
   return (
     <div
       onClick={onClick}
-      style={{ background: '#fff', borderRadius: 18, padding: 20, boxShadow: 'var(--shadow-sm)', cursor: onClick ? 'pointer' : undefined, transition: 'all 0.2s', ...style }}
-      onMouseEnter={e => { if (hover || onClick) (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)' }}
-      onMouseLeave={e => { if (hover || onClick) (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)' }}
+      style={{ background: '#fff', borderRadius: 18, padding: 20, boxShadow: 'var(--shadow-sm)', cursor: onClick ? 'pointer' : undefined, transform: 'translateY(0)', transition: 'box-shadow 0.2s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)', ...style }}
+      onMouseEnter={e => { if (hover || onClick) { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'var(--shadow-md)'; el.style.transform = 'translateY(-2px)' } }}
+      onMouseLeave={e => { if (hover || onClick) { const el = e.currentTarget as HTMLElement; el.style.boxShadow = 'var(--shadow-sm)'; el.style.transform = 'translateY(0)' } }}
     >
       {children}
     </div>
@@ -201,6 +205,47 @@ export function Loading({ label = 'Carregando...' }: { label?: string }) {
       <div style={{ width: 36, height: 36, borderRadius: '50%', border: '2.5px solid var(--border)', borderTopColor: 'var(--teal-800)', animation: 'spin 0.75s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <span style={{ fontSize: 14, color: 'var(--gray-text)' }}>{label}</span>
+    </div>
+  )
+}
+
+// ─── ScanLoader — AI processing screen ─────────────────────────────────────────
+const SCAN_MESSAGES = ['Detectando padrões...', 'Comparando com base de dados...', 'Calculando classificação...']
+export function ScanLoader({ title, subtitle }: { title: string; subtitle?: string }) {
+  const [msgIndex, setMsgIndex] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setMsgIndex(i => (i + 1) % SCAN_MESSAGES.length), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '48px 0', gap: 24 }}>
+      <div style={{ position: 'relative', width: 88, height: 88 }}>
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: '50%',
+          background: 'conic-gradient(from 0deg, var(--teal-800), var(--green-600), var(--teal-700), var(--teal-800))',
+          animation: 'scanSpin 1.4s linear infinite',
+          WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))',
+          mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px))',
+        } as CSSProperties} />
+        <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', background: '#fff', boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--gradient-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'scanPulse 1.6s ease-in-out infinite' }}>
+            <Icon name="scan" size={18} color="#fff" />
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @keyframes scanSpin { to { transform: rotate(360deg); } }
+        @keyframes scanPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.14); opacity: 0.85; } }
+        @keyframes scanBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(220%); } }
+      `}</style>
+      <div>
+        <h2 style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 800, color: 'var(--body)', margin: '0 0 6px' }}>{title}</h2>
+        {subtitle && <p style={{ fontSize: 13, color: 'var(--gray-text)', margin: '0 0 14px', maxWidth: 280 }}>{subtitle}</p>}
+        <div style={{ width: 180, height: 4, borderRadius: 999, background: 'var(--border)', overflow: 'hidden', margin: subtitle ? '0 auto' : '14px auto 0' }}>
+          <div style={{ width: '40%', height: '100%', borderRadius: 999, background: 'var(--gradient-brand)', animation: 'scanBar 1.1s ease-in-out infinite' }} />
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--teal-800)', fontFamily: 'Outfit', fontWeight: 600, marginTop: 10, minHeight: 16 }}>{SCAN_MESSAGES[msgIndex]}</p>
+      </div>
     </div>
   )
 }
@@ -301,13 +346,14 @@ export function ScoreMeter({ score, color, size = 100 }: { score: number; color:
 
 // ─── Modal / bottom sheet ─────────────────────────────────────────────────────
 export function Modal({ children, onClose, title }: { children: ReactNode; onClose: () => void; title?: string }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)' }} onClick={onClose}>
-      <div style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: '24px', width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+  return createPortal(
+    <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)' }} onClick={onClose}>
+      <div className="modal-sheet" style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: '24px', width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <div style={{ width: 36, height: 4, background: 'var(--border)', borderRadius: 999, margin: '0 auto 20px' }} />
         {title && <h3 style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 800, color: 'var(--body)', marginBottom: 16 }}>{title}</h3>}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

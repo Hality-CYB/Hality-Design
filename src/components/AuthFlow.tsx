@@ -53,10 +53,10 @@ function AuthPage({ children }: { children: React.ReactNode }) {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px' }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 68, height: 68, borderRadius: 20, background: '#fff', border: '1.5px solid var(--teal-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 20px rgba(11,107,130,0.15)' }}>
-            <img src={cybIcon} alt="Check Your Breath" style={{ height: 55, objectFit: 'contain' }} />
+          <div style={{  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={cybIcon} alt="Check Your Breath" style={{ height: 90, objectFit: 'contain' }} />
           </div>
-          <h1 style={{ fontFamily: 'Outfit', fontSize: 24, fontWeight: 900, color: 'var(--body)', margin: '0 0 4px', letterSpacing: -0.5 }}>Check Your Breath</h1>
+          <h1 style={{ fontFamily: 'Outfit', fontSize: 24, color: 'var(--teal-900)', margin: '0 0 4px', letterSpacing: -0.5 }}>Check <span style={{ color: 'var(--teal-700)' }}>Your</span> Breath</h1>
           <p style={{ fontSize: 13, color: 'var(--gray-text)', margin: 0 }}>Diagnóstico inteligente do hálito com IA</p>
         </div>
         <div style={{ background: '#fff', borderRadius: 24, padding: '28px 24px', boxShadow: 'var(--shadow-md)' }}>

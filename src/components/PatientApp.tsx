@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AuthUser } from './AuthFlow'
-import { Btn, Card, Badge, Empty, Modal, Alert, Avatar, PageHero, SectionHeader } from './shared/UI'
+import { Btn, Card, Badge, Empty, Modal, Alert, Avatar, PageHero, SectionHeader, ScanLoader } from './shared/UI'
 import { Icon } from './shared/Icons'
+import { TIPS, type Tip } from './shared/tips'
 import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
 import cybIcon from '@/imports/Icon_CheckYourBreath.png'
 
@@ -14,21 +15,44 @@ const levelColor = (l: Level | null) => l === null ? '#6B7280' : l === 1 ? '#16A
 const levelLabel = (l: Level | null) => l === null ? 'Pendente' : l === 1 ? 'Hálito Normal' : l === 2 ? 'Halitose Íntima' : 'Mau Hálito Social'
 const levelBadge = (l: Level | null): BadgeStatus => l === null ? 'pending' : l === 1 ? 'success' : l === 2 ? 'warning' : 'danger'
 
-const DIAGS: { id: number; date: string; level: Level | null; status: string; revised: boolean }[] = [
-  { id: 1, date: '12/08/2026', level: 2, status: 'Concluído', revised: true },
-  { id: 2, date: '05/07/2026', level: 1, status: 'Concluído', revised: true },
-  { id: 3, date: '20/06/2026', level: null, status: 'Aguardando análise', revised: false },
-  { id: 4, date: '10/06/2026', level: 3, status: 'Aguardando revisão', revised: false },
+const DIAGS: { id: number; date: string; level: Level | null; status: string; revised: boolean; anam: Record<string, string> }[] = [
+  { id: 1, date: '12/08/2026', level: 2, status: 'Concluído', revised: true, anam: { fumante: 'Não', escovacao: '2x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Sim' } },
+  { id: 2, date: '05/07/2026', level: 1, status: 'Concluído', revised: true, anam: { fumante: 'Não', escovacao: '3x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Não' } },
+  { id: 3, date: '20/06/2026', level: null, status: 'Aguardando análise', revised: false, anam: { fumante: 'Não', escovacao: '2x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Não' } },
+  { id: 4, date: '10/06/2026', level: 3, status: 'Aguardando revisão', revised: false, anam: { fumante: 'Sim', escovacao: '1x ao dia', medicacao: 'Nenhuma', bocaSeca: 'Sim' } },
 ]
 
-const TIPS = [
-  { id: 1, tag: 'Higiene', title: 'Higiene da Língua', body: 'Use um limpador de língua pela manhã. A saburra lingual é a principal causa da halitose. Passe suavemente 3 a 5 vezes da parte posterior para a ponta.', icon: <Icon name="sparkles" size={22} /> },
-  { id: 2, tag: 'Saúde', title: 'Hidratação', body: 'Beba 2 litros de água por dia. A boca seca favorece o crescimento de bactérias anaeróbias que produzem compostos sulfurados, causadores do mau hálito.', icon: <Icon name="drop" size={22} /> },
-  { id: 3, tag: 'Nutrição', title: 'Alimentos Aliados', body: 'Consuma maçã, cenoura, salsinha e iogurte natural. Esses alimentos ajudam a neutralizar os compostos causadores do mau hálito de forma natural.', icon: <Icon name="heart" size={22} /> },
-  { id: 4, tag: 'Rotina', title: 'Rotina de Higiene', body: 'Escove os dentes após cada refeição, use fio dental diariamente e enxaguante sem álcool para completar a limpeza bucal.', icon: <Icon name="checkCircle" size={22} /> },
-  { id: 5, tag: 'Saúde', title: 'Consulta Periódica', body: 'Visite seu dentista a cada 6 meses. Cáries e doença periodontal são causas frequentes de halitose que exigem tratamento profissional.', icon: <Icon name="medical" size={22} /> },
-  { id: 6, tag: 'Estilo de Vida', title: 'Evite Tabagismo', body: 'O cigarro resseca a mucosa oral e deposita substâncias odoríferas nos tecidos. Parar de fumar melhora significativamente o hálito.', icon: <Icon name="noSymbol" size={22} /> },
-]
+// ─── Tip card (texto / imagem / vídeo) ──────────────────────────────────────
+function TipCard({ tip, compact }: { tip: Tip; compact?: boolean }) {
+  return (
+    <Card style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '16px' }}>
+      <div style={{ width: compact ? 42 : 44, height: compact ? 42 : 44, borderRadius: compact ? 12 : 13, background: 'var(--teal-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-800)', flexShrink: 0 }}>
+        <Icon name={tip.iconName} size={22} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{tip.title}</span>
+          <span style={{ fontSize: 10, fontFamily: 'Outfit', fontWeight: 600, color: 'var(--teal-800)', background: 'var(--teal-100)', borderRadius: 999, padding: '2px 8px' }}>{tip.cat}</span>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.55, margin: 0 }}>{tip.body}</p>
+        {tip.format !== 'texto' && (
+          tip.mediaUrl ? (
+            <div style={{ marginTop: 10, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              {tip.format === 'imagem'
+                ? <img src={tip.mediaUrl} alt={tip.title} style={{ width: '100%', maxHeight: 220, objectFit: 'cover', display: 'block' }} />
+                : <video src={tip.mediaUrl} controls style={{ width: '100%', maxHeight: 220, display: 'block', background: '#000' }} />}
+            </div>
+          ) : (
+            <div style={{ marginTop: 10, background: 'var(--bg)', borderRadius: 12, aspectRatio: '16/9', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1px solid var(--border)' }}>
+              <Icon name={tip.format === 'video' ? 'video' : 'image'} size={22} color="var(--gray-3)" />
+              <span style={{ fontSize: 11, color: 'var(--gray-3)', fontFamily: 'Outfit' }}>{tip.format === 'video' ? 'Vídeo' : 'Imagem'}</span>
+            </div>
+          )
+        )}
+      </div>
+    </Card>
+  )
+}
 
 // ─── Level chip ────────────────────────────────────────────────────────────────
 function LevelChip({ level, size = 'md' }: { level: Level | null; size?: 'sm' | 'md' | 'lg' }) {
@@ -172,17 +196,8 @@ function Home({ user, setView }: { user: AuthUser; setView: (v: View) => void })
         <div>
           <h3 style={{ fontFamily: 'Outfit', fontSize: 17, fontWeight: 800, color: 'var(--body)', margin: '0 0 12px' }}>Dicas para você</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {TIPS.map(tip => (
-              <Card key={tip.id} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '16px' }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'var(--teal-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-800)', flexShrink: 0 }}>{tip.icon}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{tip.title}</span>
-                    <span style={{ fontSize: 10, fontFamily: 'Outfit', fontWeight: 600, color: 'var(--teal-800)', background: 'var(--teal-100)', borderRadius: 999, padding: '2px 8px' }}>{tip.tag}</span>
-                  </div>
-                  <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.55, margin: 0 }}>{tip.body}</p>
-                </div>
-              </Card>
+            {TIPS.filter(t => t.pub && t.showOnHome).sort((a, b) => a.order - b.order).map(tip => (
+              <TipCard key={tip.id} tip={tip} compact />
             ))}
           </div>
         </div>
@@ -236,6 +251,7 @@ function DiagnosisFlow({ setView }: { setView: (v: View) => void }) {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [aIdx, setAIdx] = useState(0)
+  const [resultLevel] = useState<Level>(() => ([1, 2, 3] as Level[])[Math.floor(Math.random() * 3)])
   const [frontCamera, setFrontCamera] = useState(false)
 
   const next = () => setStep(s => s + 1)
@@ -257,6 +273,7 @@ function DiagnosisFlow({ setView }: { setView: (v: View) => void }) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
+      <div key={step} className="page-enter">
 
         {/* 0 — Intro */}
         {step === 0 && (
@@ -503,17 +520,7 @@ function DiagnosisFlow({ setView }: { setView: (v: View) => void }) {
 
         {/* 6 — Processando */}
         {step === 6 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 0', gap: 28 }}>
-            <div style={{ position: 'relative', width: 80, height: 80 }}>
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--teal-800)', animation: 'spin 0.85s linear infinite' }} />
-              <div style={{ position: 'absolute', inset: '12px', borderRadius: '50%', border: '2px solid var(--teal-100)', borderTopColor: 'var(--green-600)', animation: 'spin 1.2s linear infinite reverse' }} />
-            </div>
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            <div>
-              <h2 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: 'var(--body)', margin: '0 0 8px' }}>Analisando sua imagem</h2>
-              <p style={{ fontSize: 14, color: 'var(--gray-text)', lineHeight: 1.6, maxWidth: 280 }}>Nossa inteligência artificial está processando o diagnóstico. Isso pode levar alguns instantes.</p>
-            </div>
-          </div>
+          <ScanLoader title="Analisando sua imagem" subtitle="Nossa inteligência artificial está processando o diagnóstico. Isso pode levar alguns instantes." />
         )}
 
         {/* 7 — Resultado */}
@@ -533,10 +540,10 @@ function DiagnosisFlow({ setView }: { setView: (v: View) => void }) {
               <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(22,163,74,0.15)', filter: 'blur(24px)' }} />
               <div style={{ position: 'relative' }}>
                 <div style={{ fontFamily: 'Outfit', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: 1.5, marginBottom: 16, textTransform: 'uppercase' }}>Resultado do pré-diagnóstico</div>
-                <div style={{ width: 80, height: 80, borderRadius: 24, background: '#FF950020', border: '2px solid #FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <Icon name="scan" size={36} color="#FF9500" />
+                <div style={{ width: 80, height: 80, borderRadius: 24, background: levelColor(resultLevel) + '20', border: `2px solid ${levelColor(resultLevel)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <Icon name="scan" size={36} color={levelColor(resultLevel)} />
                 </div>
-                <LevelChip level={2} size="lg" />
+                <LevelChip level={resultLevel} size="lg" />
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 10 }}>Confiança da análise: 87%</div>
               </div>
             </div>
@@ -590,30 +597,87 @@ function DiagnosisFlow({ setView }: { setView: (v: View) => void }) {
 
             <div>
               <h2 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: 'var(--body)', margin: '0 0 4px' }}>Orientações para você</h2>
-              <p style={{ fontSize: 13, color: 'var(--gray-text)' }}>Com base no seu pré-diagnóstico — Halitose Íntima</p>
+              <p style={{ fontSize: 13, color: 'var(--gray-text)' }}>Com base no seu pré-diagnóstico — {levelLabel(resultLevel)}</p>
             </div>
 
-            {TIPS.slice(0, 4).map(tip => (
-              <Card key={tip.id} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--teal-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-800)', flexShrink: 0 }}>{tip.icon}</div>
-                <div>
-                  <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)', marginBottom: 4 }}>{tip.title}</div>
-                  <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.5, margin: 0 }}>{tip.body}</p>
-                </div>
-              </Card>
+            {TIPS.filter(t => t.pub && t.levels.includes(resultLevel)).sort((a, b) => a.order - b.order).map(tip => (
+              <TipCard key={tip.id} tip={tip} />
             ))}
 
             <Btn full variant="success" size="lg" onClick={() => setView('home')}>Concluir diagnóstico</Btn>
           </div>
         )}
       </div>
+      </div>
     </div>
   )
 }
 
 // ─── Diagnostics (Progresso) ───────────────────────────────────────────────────
+const PERIODS = ['Todos', '7d', '30d', '90d'] as const
+type QuickPeriod = typeof PERIODS[number]
+type Period = QuickPeriod | 'custom'
+type CustomRange = { start: string; end: string }
+const periodDays: Record<QuickPeriod, number | null> = { Todos: null, '7d': 7, '30d': 30, '90d': 90 }
+function parseBRDate(s: string): Date {
+  const [d, m, y] = s.split('/').map(Number)
+  return new Date(y, m - 1, d)
+}
+function parseISODate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+function periodLabel(p: Period, range: CustomRange | null): string {
+  if (p !== 'custom') return p === 'Todos' ? 'Todos' : p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : '90 dias'
+  if (range?.start && range?.end) {
+    const fmt = (s: string) => { const [, m, d] = s.split('-'); return `${d}/${m}` }
+    return `${fmt(range.start)}–${fmt(range.end)}`
+  }
+  return 'Outro período'
+}
+function inPeriod(dateStr: string, period: Period, range: CustomRange | null): boolean {
+  if (period === 'custom') {
+    if (!range?.start || !range?.end) return true
+    const d = parseBRDate(dateStr)
+    const end = parseISODate(range.end)
+    end.setHours(23, 59, 59, 999)
+    return d >= parseISODate(range.start) && d <= end
+  }
+  const days = periodDays[period]
+  if (days === null) return true
+  const diffMs = Date.now() - parseBRDate(dateStr).getTime()
+  return diffMs >= 0 && diffMs <= days * 24 * 60 * 60 * 1000
+}
+
+// ─── Custom period modal ────────────────────────────────────────────────────
+function CustomPeriodModal({ initial, onClose, onApply }: { initial: CustomRange | null; onClose: () => void; onApply: (r: CustomRange) => void }) {
+  const [start, setStart] = useState(initial?.start ?? '')
+  const [end, setEnd] = useState(initial?.end ?? '')
+  return (
+    <Modal onClose={onClose} title="Período personalizado">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Data início</label>
+          <input type="date" value={start} onChange={e => setStart(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Data fim</label>
+          <input type="date" value={end} min={start || undefined} onChange={e => setEnd(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <Btn full size="lg" disabled={!start || !end} onClick={() => onApply({ start, end })}>Aplicar</Btn>
+      </div>
+    </Modal>
+  )
+}
+
 function Diagnostics({ setView }: { setView: (v: View) => void }) {
   const [selected, setSelected] = useState<typeof DIAGS[0] | null>(null)
+  const [anamOpen, setAnamOpen] = useState(false)
+  const [detailTab, setDetailTab] = useState<'detalhes' | 'orientacoes'>('detalhes')
+  const [period, setPeriod] = useState<Period>('Todos')
+  const [customRange, setCustomRange] = useState<CustomRange | null>(null)
+  const [showCustomModal, setShowCustomModal] = useState(false)
+  const filtered = DIAGS.filter(d => inPeriod(d.date, period, customRange))
 
   if (selected) return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
@@ -622,34 +686,71 @@ function Diagnostics({ setView }: { setView: (v: View) => void }) {
         sub={selected.date}
         right={<Badge label={selected.status} status={selected.status === 'Concluído' ? 'success' : selected.status === 'Aguardando revisão' ? 'pending' : 'warning'} />}
       />
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: 12, padding: 4, gap: 2 }}>
+          {([['detalhes', 'Detalhes'], ['orientacoes', 'Orientações']] as const).map(([v, l]) => (
+            <button key={v} onClick={() => setDetailTab(v)} style={{ flex: 1, padding: '9px 6px', borderRadius: 9, border: 'none', background: detailTab === v ? '#fff' : 'transparent', boxShadow: detailTab === v ? 'var(--shadow-sm)' : 'none', color: detailTab === v ? 'var(--teal-800)' : 'var(--gray-text)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s' }}>{l}</button>
+          ))}
+        </div>
+      </div>
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Card>
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ width: 80, height: 80, borderRadius: 22, background: levelColor(selected.level) + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-              <Icon name="scan" size={36} color={levelColor(selected.level)} />
-            </div>
-            <LevelChip level={selected.level} size="lg" />
-          </div>
+        {detailTab === 'detalhes' && (
+          <>
+            <Card>
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ width: 80, height: 80, borderRadius: 22, background: levelColor(selected.level) + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <Icon name="scan" size={36} color={levelColor(selected.level)} />
+                </div>
+                <LevelChip level={selected.level} size="lg" />
+              </div>
 
-          {/* Image placeholder */}
-          <div style={{ background: 'var(--bg)', borderRadius: 14, aspectRatio: '4/3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 14, gap: 8, border: '1px solid var(--border)' }}>
-            <Icon name="image" size={32} color="var(--gray-3)" />
-            <span style={{ fontSize: 12, color: 'var(--gray-3)', fontFamily: 'Outfit' }}>Imagem capturada</span>
-          </div>
+              {/* Image placeholder */}
+              <div style={{ background: 'var(--bg)', borderRadius: 14, aspectRatio: '4/3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 14, gap: 8, border: '1px solid var(--border)' }}>
+                <Icon name="image" size={32} color="var(--gray-3)" />
+                <span style={{ fontSize: 12, color: 'var(--gray-3)', fontFamily: 'Outfit' }}>Imagem capturada</span>
+              </div>
 
-          {selected.level !== null && (
-            <div style={{ background: 'var(--teal-50)', borderRadius: 12, padding: '14px', border: '1px solid var(--teal-100)' }}>
-              <div style={{ fontFamily: 'Outfit', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 6 }}>Orientação</div>
-              <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.6, margin: 0 }}>
-                {selected.level === 1
-                  ? 'Seu hálito está normal. Mantenha a rotina de higiene bucal e hidratação adequada.'
-                  : selected.level === 2
-                  ? 'Identificamos halitose íntima. Recomendamos limpeza lingual diária e avaliação periodontal.'
-                  : 'Mau hálito social detectado. Encaminhamento para avaliação especializada recomendado.'}
-              </p>
-            </div>
-          )}
-        </Card>
+              {selected.level !== null && (
+                <div style={{ background: 'var(--teal-50)', borderRadius: 12, padding: '14px', border: '1px solid var(--teal-100)' }}>
+                  <div style={{ fontFamily: 'Outfit', fontSize: 13, fontWeight: 700, color: 'var(--body)', marginBottom: 6 }}>Orientação</div>
+                  <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.6, margin: 0 }}>
+                    {selected.level === 1
+                      ? 'Seu hálito está normal. Mantenha a rotina de higiene bucal e hidratação adequada.'
+                      : selected.level === 2
+                      ? 'Identificamos halitose íntima. Recomendamos limpeza lingual diária e avaliação periodontal.'
+                      : 'Mau hálito social detectado. Encaminhamento para avaliação especializada recomendado.'}
+                  </p>
+                </div>
+              )}
+            </Card>
+            <Card style={{ padding: 0, overflow: 'hidden' }}>
+              <button onClick={() => setAnamOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 20, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 14, color: 'var(--body)' }}>Anamnese</div>
+                <Icon name="chevronRight" size={16} color="var(--gray-3)" style={{ transform: anamOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+              </button>
+              {anamOpen && (
+                <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {Object.entries(selected.anam).map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 10 }}>
+                      <span style={{ fontSize: 13, color: 'var(--gray-text)', textTransform: 'capitalize' }}>{k.replace(/([A-Z])/g, ' $1')}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit' }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </>
+        )}
+        {detailTab === 'orientacoes' && (
+          selected.level === null
+            ? <Empty icon={<Icon name="lightbulb" size={28} />} title="Ainda sem orientações" desc="As orientações aparecem depois que o diagnóstico for concluído." />
+            : (() => {
+                const relevant = TIPS.filter(t => t.pub && t.levels.includes(selected.level as 1 | 2 | 3)).sort((a, b) => a.order - b.order)
+                return relevant.length === 0
+                  ? <Empty icon={<Icon name="lightbulb" size={28} />} title="Nenhuma orientação cadastrada" desc="Ainda não há dicas para essa classificação." />
+                  : relevant.map(tip => <TipCard key={tip.id} tip={tip} />)
+              })()
+        )}
         <Btn variant="secondary" full onClick={() => setSelected(null)}><Icon name="chevronLeft" size={16} /> Voltar</Btn>
       </div>
     </div>
@@ -658,11 +759,30 @@ function Diagnostics({ setView }: { setView: (v: View) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <PageHero title="Meus Diagnósticos" sub={`${DIAGS.length} exames realizados`} />
+      {DIAGS.length > 0 && (
+        <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8, overflowX: 'auto' }}>
+          {PERIODS.map(p => (
+            <button key={p} onClick={() => setPeriod(p)} style={{ padding: '7px 14px', borderRadius: 999, border: `1.5px solid ${period === p ? 'var(--teal-800)' : 'var(--border)'}`, background: period === p ? 'var(--teal-800)' : '#fff', color: period === p ? '#fff' : 'var(--gray-text)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{periodLabel(p, null)}</button>
+          ))}
+          <button onClick={() => setShowCustomModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 999, border: `1.5px solid ${period === 'custom' ? 'var(--teal-800)' : 'var(--border)'}`, background: period === 'custom' ? 'var(--teal-800)' : '#fff', color: period === 'custom' ? '#fff' : 'var(--gray-text)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <Icon name="clock" size={13} color={period === 'custom' ? '#fff' : 'var(--gray-3)'} /> {periodLabel('custom', customRange)}
+          </button>
+        </div>
+      )}
+      {showCustomModal && (
+        <CustomPeriodModal
+          initial={customRange}
+          onClose={() => setShowCustomModal(false)}
+          onApply={r => { setCustomRange(r); setPeriod('custom'); setShowCustomModal(false) }}
+        />
+      )}
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {DIAGS.length === 0
           ? <Empty icon={<Icon name="beaker" size={28} />} title="Nenhum diagnóstico" desc="Faça seu primeiro diagnóstico agora." action={<Btn onClick={() => setView('diagnosis-flow')}>Começar</Btn>} />
-          : DIAGS.map(d => (
-            <Card key={d.id} onClick={() => setSelected(d)} hover style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+          : filtered.length === 0
+          ? <Empty icon={<Icon name="clock" size={28} />} title="Nenhum diagnóstico neste período" desc="Tente selecionar um período maior." action={<Btn variant="secondary" onClick={() => setPeriod('Todos')}>Ver todos</Btn>} />
+          : filtered.map(d => (
+            <Card key={d.id} onClick={() => { setSelected(d); setDetailTab('detalhes') }} hover style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
               <div style={{ width: 48, height: 48, borderRadius: 14, background: levelColor(d.level) + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Icon name="scan" size={22} color={levelColor(d.level)} />
               </div>
@@ -682,12 +802,146 @@ function Diagnostics({ setView }: { setView: (v: View) => void }) {
   )
 }
 
+// ─── Change password modal ───────────────────────────────────────────────────
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const [current, setCurrent] = useState('')
+  const [next, setNextPw] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [saved, setSaved] = useState(false)
+  const mismatch = confirm.length > 0 && next !== confirm
+  const canSave = current.length > 0 && next.length >= 6 && next === confirm
+
+  return (
+    <Modal onClose={onClose} title="Alterar senha">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Senha atual</label>
+          <input type="password" value={current} onChange={e => setCurrent(e.target.value)} placeholder="Digite sua senha atual" style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Nova senha</label>
+          <input type="password" value={next} onChange={e => setNextPw(e.target.value)} placeholder="Mínimo 6 caracteres" style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Confirmar nova senha</label>
+          <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repita a nova senha" style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${mismatch ? '#DC2626' : 'var(--border)'}`, borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+          {mismatch && <span style={{ fontSize: 12, color: '#DC2626' }}>As senhas não coincidem.</span>}
+        </div>
+        {saved && <Alert message="Senha atualizada com sucesso!" type="success" />}
+        <Btn full size="lg" disabled={!canSave} onClick={() => setSaved(true)}>Atualizar senha</Btn>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Privacy modal ────────────────────────────────────────────────────────────
+function PrivacyModal({ onClose }: { onClose: () => void }) {
+  const [shareWithProfessionals, setShareWithProfessionals] = useState(true)
+  const [emailComms, setEmailComms] = useState(true)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const Toggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
+    <button onClick={onToggle} style={{ width: 38, height: 22, borderRadius: 999, background: on ? 'var(--teal-800)' : '#D1D5DB', border: 'none', display: 'flex', alignItems: 'center', padding: '2px', cursor: 'pointer', transition: 'background 0.2s', justifyContent: on ? 'flex-end' : 'flex-start', flexShrink: 0 }}>
+      <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+    </button>
+  )
+
+  return (
+    <Modal onClose={onClose} title="Privacidade">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--bg)', borderRadius: 12 }}>
+          <div>
+            <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)' }}>Compartilhar com profissionais</div>
+            <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>Permite que profissionais Hality vejam seus diagnósticos e anamnese</div>
+          </div>
+          <Toggle on={shareWithProfessionals} onToggle={() => setShareWithProfessionals(v => !v)} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--bg)', borderRadius: 12 }}>
+          <div>
+            <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)' }}>Comunicações por e-mail</div>
+            <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>Dicas de saúde, novidades e lembretes</div>
+          </div>
+          <Toggle on={emailComms} onToggle={() => setEmailComms(v => !v)} />
+        </div>
+
+        <a href="#" onClick={e => e.preventDefault()} style={{ fontSize: 13, color: 'var(--teal-800)', fontFamily: 'Outfit', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Icon name="document" size={14} /> Ler política de privacidade
+        </a>
+
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Btn variant="secondary" full><Icon name="document" size={16} /> Baixar meus dados</Btn>
+          {!confirmDelete ? (
+            <Btn variant="danger" full onClick={() => setConfirmDelete(true)}><Icon name="trash" size={16} color="#DC2626" /> Excluir minha conta</Btn>
+          ) : (
+            <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <span style={{ fontSize: 13, color: '#991B1B', lineHeight: 1.5 }}>Isso apaga permanentemente sua conta e seus diagnósticos. Tem certeza?</span>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Btn variant="secondary" full size="sm" onClick={() => setConfirmDelete(false)}>Cancelar</Btn>
+                <Btn variant="danger" full size="sm">Confirmar exclusão</Btn>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── About modal ──────────────────────────────────────────────────────────────
+const CREDITS = [
+  { role: 'Desenvolvimento', name: 'Nome do integrante' },
+  { role: 'Desenvolvimento', name: 'Nome do integrante' },
+  { role: 'Design', name: 'Nome do integrante' },
+  { role: 'Gestão de Produto', name: 'Nome do integrante' },
+]
+
+function AboutModal({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal onClose={onClose} title="Sobre">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ textAlign: 'center' }}>
+          <img src={cybIcon} alt="Check Your Breath" style={{ height: 56, objectFit: 'contain', margin: '0 auto 10px' }} />
+          <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 17, color: 'var(--body)' }}>Check Your Breath</div>
+          <div style={{ fontSize: 12, color: 'var(--gray-text)', marginTop: 2 }}>v1.0.0 · Protótipo</div>
+        </div>
+
+        <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.6, margin: 0 }}>
+          O Check Your Breath é um app de pré-diagnóstico de halitose desenvolvido em parceria com a Hality,
+          como projeto da disciplina AGES (Ambientes e Gestão para o Desenvolvimento de Software) da PUCRS.
+          A proposta é facilitar o acesso a uma triagem inicial do hálito com apoio de inteligência artificial,
+          conectando pacientes a profissionais especializados para confirmação clínica.
+        </p>
+
+        <div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 13, color: 'var(--body)', marginBottom: 10 }}>Equipe AGES</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {CREDITS.map((c, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit' }}>{c.name}</span>
+                <span style={{ fontSize: 12, color: 'var(--gray-text)' }}>{c.role}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+          <img src={halityLogo} alt="Hality" style={{ height: 16, objectFit: 'contain', opacity: 0.6 }} />
+          <span style={{ fontSize: 11, color: 'var(--gray-3)' }}>em parceria com Hality</span>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── Profile ───────────────────────────────────────────────────────────────────
 function Profile({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(user.name)
   const [phone, setPhone] = useState('(11) 99999-1234')
   const [saved, setSaved] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [showAboutModal, setShowAboutModal] = useState(false)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
@@ -724,19 +978,23 @@ function Profile({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
 
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {[
-            { icon: <Icon name="key" size={18} color="var(--teal-800)" />, label: 'Alterar senha', sub: 'Atualizar credenciais de acesso', bg: 'var(--teal-100)' },
-            { icon: <Icon name="shield" size={18} color="#16A34A" />, label: 'Privacidade', sub: 'Política e dados pessoais', bg: '#D1FAE5' },
-          ].map((item, i) => (
-            <div key={item.label} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '14px 20px', borderBottom: i < 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}>
+            { icon: <Icon name="key" size={18} color="var(--teal-800)" />, label: 'Alterar senha', sub: 'Atualizar credenciais de acesso', bg: 'var(--teal-100)', action: () => setShowPasswordModal(true) },
+            { icon: <Icon name="shield" size={18} color="#16A34A" />, label: 'Privacidade', sub: 'Política e dados pessoais', bg: '#D1FAE5', action: () => setShowPrivacyModal(true) },
+            { icon: <Icon name="info" size={18} color="var(--gray-text)" />, label: 'Sobre', sub: 'Equipe e desenvolvimento do app', bg: 'var(--bg)', action: () => setShowAboutModal(true) },
+          ].map((item, i, arr) => (
+            <button key={item.label} onClick={item.action} style={{ width: '100%', display: 'flex', gap: 14, alignItems: 'center', padding: '14px 20px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{item.icon}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{item.label}</div>
                 <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{item.sub}</div>
               </div>
               <Icon name="chevronRight" size={16} color="var(--gray-3)" />
-            </div>
+            </button>
           ))}
         </Card>
+        {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
+        {showPrivacyModal && <PrivacyModal onClose={() => setShowPrivacyModal(false)} />}
+        {showAboutModal && <AboutModal onClose={() => setShowAboutModal(false)} />}
 
         <Btn full variant="danger" size="lg" onClick={onLogout}>
           <Icon name="signOut" size={18} color="#DC2626" /> Sair da conta
@@ -760,10 +1018,12 @@ export default function PatientApp({ user, onLogout }: { user: AuthUser; onLogou
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
       {view !== 'home' && <TopBar />}
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
-        {view === 'home' && <Home user={user} setView={setView} />}
-        {view === 'diagnosis-flow' && <DiagnosisFlow setView={setView} />}
-        {view === 'diagnostics' && <Diagnostics setView={setView} />}
-        {view === 'profile' && <Profile user={user} onLogout={onLogout} />}
+        <div key={view} className="page-enter">
+          {view === 'home' && <Home user={user} setView={setView} />}
+          {view === 'diagnosis-flow' && <DiagnosisFlow setView={setView} />}
+          {view === 'diagnostics' && <Diagnostics setView={setView} />}
+          {view === 'profile' && <Profile user={user} onLogout={onLogout} />}
+        </div>
       </div>
       <BottomNav view={view} setView={setView} />
     </div>

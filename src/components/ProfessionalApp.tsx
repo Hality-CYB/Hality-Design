@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { AuthUser } from './AuthFlow'
-import { Btn, Card, Badge, Empty, Avatar, SectionHeader, Textarea } from './shared/UI'
+import { Btn, Card, Badge, Empty, Avatar, SectionHeader, Textarea, ScanLoader, Modal, Alert } from './shared/UI'
 import { Icon } from './shared/Icons'
+import { TIPS, type Tip } from './shared/tips'
 import cybIcon from '@/imports/Icon_CheckYourBreath.png'
+import halityLogo from '@/imports/Logo-Hality-rncwhngo9oo4u9tdlspy0644l1cpwnm78navwjh0jk.png'
 
 type BadgeStatus = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'pending'
 type ProfView = 'dashboard' | 'diagnostics' | 'diag-detail' | 'patients' | 'patient-detail' | 'evaluate' | 'profile'
@@ -54,6 +56,38 @@ const INITIAL_PATIENTS: Patient[] = [
 
 const statusBadge = (status: string): BadgeStatus => status === 'Revisado' ? 'success' : status === 'Processando' ? 'neutral' : 'pending'
 
+// ─── Tip card (texto / imagem / vídeo) ──────────────────────────────────────
+function TipCard({ tip }: { tip: Tip }) {
+  return (
+    <Card style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+      <div style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--teal-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-800)', flexShrink: 0 }}>
+        <Icon name={tip.iconName} size={22} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <span style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{tip.title}</span>
+          <span style={{ fontSize: 10, fontFamily: 'Outfit', fontWeight: 600, color: 'var(--teal-800)', background: 'var(--teal-100)', borderRadius: 999, padding: '2px 8px' }}>{tip.cat}</span>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.5, margin: 0 }}>{tip.body}</p>
+        {tip.format !== 'texto' && (
+          tip.mediaUrl ? (
+            <div style={{ marginTop: 10, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              {tip.format === 'imagem'
+                ? <img src={tip.mediaUrl} alt={tip.title} style={{ width: '100%', maxHeight: 220, objectFit: 'cover', display: 'block' }} />
+                : <video src={tip.mediaUrl} controls style={{ width: '100%', maxHeight: 220, display: 'block', background: '#000' }} />}
+            </div>
+          ) : (
+            <div style={{ marginTop: 10, background: 'var(--bg)', borderRadius: 12, aspectRatio: '16/9', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1px solid var(--border)' }}>
+              <Icon name={tip.format === 'video' ? 'video' : 'image'} size={22} color="var(--gray-3)" />
+              <span style={{ fontSize: 11, color: 'var(--gray-3)', fontFamily: 'Outfit' }}>{tip.format === 'video' ? 'Vídeo' : 'Imagem'}</span>
+            </div>
+          )
+        )}
+      </div>
+    </Card>
+  )
+}
+
 // ─── TopBar ───────────────────────────────────────────────────────────────────
 function TopBar({ user, onProfile }: { user: AuthUser; onProfile: () => void }) {
   return (
@@ -96,7 +130,7 @@ function BottomNav({ view, setView }: { view: ProfView; setView: (v: ProfView) =
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function Dashboard({ user, patients, setView }: { user: AuthUser; patients: Patient[]; setView: (v: ProfView) => void }) {
+function Dashboard({ user, patients, setView, onOpenDiag, onEvaluate }: { user: AuthUser; patients: Patient[]; setView: (v: ProfView) => void; onOpenDiag: (from: ProfView) => void; onEvaluate: (p: Patient | null) => void }) {
   const pending = DIAGS.filter(d => d.status === 'Aguardando revisão')
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -123,7 +157,7 @@ function Dashboard({ user, patients, setView }: { user: AuthUser; patients: Pati
         </div>
 
         {/* CTA — avaliar paciente */}
-        <button onClick={() => setView('evaluate')} style={{
+        <button onClick={() => onEvaluate(null)} style={{
           position: 'relative',
           width: '100%',
           background: 'linear-gradient(175.28deg, rgb(68, 191, 173) 8.49%, rgb(9, 76, 94) 82.33%)',
@@ -187,11 +221,10 @@ function Dashboard({ user, patients, setView }: { user: AuthUser; patients: Pati
                       <LevelChip level={d.level} size="sm" />
                     )}
                   </div>
-              
                   <Btn
                     variant="primary"
                     size="sm"
-                    onClick={() => setView('diag-detail')}
+                    onClick={() => onOpenDiag('dashboard')}
                     style={{ marginTop: 10, width: '100%' }}
                   >
                     Revisar
@@ -207,7 +240,7 @@ function Dashboard({ user, patients, setView }: { user: AuthUser; patients: Pati
           <SectionHeader title="Últimos diagnósticos" action={<Btn variant="ghost" size="sm" onClick={() => setView('diagnostics')}>Ver todos</Btn>} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {DIAGS.slice(0, 4).map((d, i) => (
-              <div key={d.id} onClick={() => setView('diag-detail')} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}>
+              <div key={d.id} onClick={() => onOpenDiag('dashboard')} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 0', borderBottom: i < 3 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}>
                 <Avatar name={d.patient} size={36} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, color: 'var(--body)' }}>{d.patient}</div>
@@ -227,25 +260,99 @@ function Dashboard({ user, patients, setView }: { user: AuthUser; patients: Pati
 }
 
 // ─── Diagnostics list ─────────────────────────────────────────────────────────
-function DiagnosticsList({ setView }: { setView: (v: ProfView) => void }) {
+const PERIODS = ['Todos', '7d', '30d', '90d'] as const
+type QuickPeriod = typeof PERIODS[number]
+type Period = QuickPeriod | 'custom'
+type CustomRange = { start: string; end: string }
+const periodDays: Record<QuickPeriod, number | null> = { Todos: null, '7d': 7, '30d': 30, '90d': 90 }
+function parseBRDate(s: string): Date {
+  const [d, m, y] = s.split('/').map(Number)
+  return new Date(y, m - 1, d)
+}
+function parseISODate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+function periodLabel(p: Period, range: CustomRange | null): string {
+  if (p !== 'custom') return p === 'Todos' ? 'Todos' : p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : '90 dias'
+  if (range?.start && range?.end) {
+    const fmt = (s: string) => { const [, m, d] = s.split('-'); return `${d}/${m}` }
+    return `${fmt(range.start)}–${fmt(range.end)}`
+  }
+  return 'Outro período'
+}
+function inPeriod(dateStr: string, period: Period, range: CustomRange | null): boolean {
+  if (period === 'custom') {
+    if (!range?.start || !range?.end) return true
+    const d = parseBRDate(dateStr)
+    const end = parseISODate(range.end)
+    end.setHours(23, 59, 59, 999)
+    return d >= parseISODate(range.start) && d <= end
+  }
+  const days = periodDays[period]
+  if (days === null) return true
+  const diffMs = Date.now() - parseBRDate(dateStr).getTime()
+  return diffMs >= 0 && diffMs <= days * 24 * 60 * 60 * 1000
+}
+
+// ─── Custom period modal ────────────────────────────────────────────────────
+function CustomPeriodModal({ initial, onClose, onApply }: { initial: CustomRange | null; onClose: () => void; onApply: (r: CustomRange) => void }) {
+  const [start, setStart] = useState(initial?.start ?? '')
+  const [end, setEnd] = useState(initial?.end ?? '')
+  return (
+    <Modal onClose={onClose} title="Período personalizado">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Data início</label>
+          <input type="date" value={start} onChange={e => setStart(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Data fim</label>
+          <input type="date" value={end} min={start || undefined} onChange={e => setEnd(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <Btn full size="lg" disabled={!start || !end} onClick={() => onApply({ start, end })}>Aplicar</Btn>
+      </div>
+    </Modal>
+  )
+}
+
+function DiagnosticsList({ setView, onOpenDiag }: { setView: (v: ProfView) => void; onOpenDiag: (from: ProfView) => void }) {
   const [filter, setFilter] = useState<'Todos' | 'Aguardando revisão' | 'Revisado'>('Todos')
-  const filtered = DIAGS.filter(d => filter === 'Todos' || d.status === filter)
+  const [period, setPeriod] = useState<Period>('Todos')
+  const [customRange, setCustomRange] = useState<CustomRange | null>(null)
+  const [showCustomModal, setShowCustomModal] = useState(false)
+  const filtered = DIAGS.filter(d => (filter === 'Todos' || d.status === filter) && inPeriod(d.date, period, customRange))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'var(--gradient-brand)', padding: '20px 20px 24px' }}>
         <h1 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 12px' }}>Diagnósticos</h1>
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, marginBottom: 8 }}>
           {(['Todos', 'Aguardando revisão', 'Revisado'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{ padding: '7px 14px', borderRadius: 999, border: 'none', background: filter === f ? '#fff' : 'rgba(255,255,255,0.15)', color: filter === f ? 'var(--teal-800)' : 'rgba(255,255,255,0.85)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{f}</button>
           ))}
         </div>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+          {PERIODS.map(p => (
+            <button key={p} onClick={() => setPeriod(p)} style={{ padding: '6px 12px', borderRadius: 999, border: `1.5px solid ${period === p ? '#fff' : 'rgba(255,255,255,0.3)'}`, background: period === p ? 'rgba(255,255,255,0.2)' : 'transparent', color: '#fff', fontFamily: 'Outfit', fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{periodLabel(p, null)}</button>
+          ))}
+          <button onClick={() => setShowCustomModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 999, border: `1.5px solid ${period === 'custom' ? '#fff' : 'rgba(255,255,255,0.3)'}`, background: period === 'custom' ? 'rgba(255,255,255,0.2)' : 'transparent', color: '#fff', fontFamily: 'Outfit', fontWeight: 600, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <Icon name="clock" size={12} color="#fff" /> {periodLabel('custom', customRange)}
+          </button>
+        </div>
       </div>
+      {showCustomModal && (
+        <CustomPeriodModal
+          initial={customRange}
+          onClose={() => setShowCustomModal(false)}
+          onApply={r => { setCustomRange(r); setPeriod('custom'); setShowCustomModal(false) }}
+        />
+      )}
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.length === 0
-          ? <Empty icon={<Icon name="beaker" size={28} />} title="Nenhum resultado" />
+          ? <Empty icon={<Icon name="beaker" size={28} />} title="Nenhum resultado" desc="Ajuste os filtros para ver mais diagnósticos." action={<Btn variant="secondary" onClick={() => { setFilter('Todos'); setPeriod('Todos') }}>Limpar filtros</Btn>} />
           : filtered.map(d => (
-            <Card key={d.id} onClick={() => setView('diag-detail')} hover style={{ cursor: 'pointer' }}>
+            <Card key={d.id} onClick={() => onOpenDiag('diagnostics')} hover style={{ cursor: 'pointer' }}>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                 <Avatar name={d.patient} size={44} />
                 <div style={{ flex: 1 }}>
@@ -269,16 +376,18 @@ function DiagnosticsList({ setView }: { setView: (v: ProfView) => void }) {
 }
 
 // ─── Diagnostic review ────────────────────────────────────────────────────────
-function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
+function DiagnosticReview({ setView, backView }: { setView: (v: ProfView) => void; backView: ProfView }) {
   const d = DIAGS[0]
   const [classif, setClassif] = useState<Level | ''>('')
   const [obs, setObs] = useState('')
   const [saved, setSaved] = useState(false)
+  const [anamOpen, setAnamOpen] = useState(false)
+  const [detailTab, setDetailTab] = useState<'detalhes' | 'orientacoes'>('detalhes')
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'var(--gradient-brand)', padding: '16px 20px 20px' }}>
-        <button onClick={() => setView('diagnostics')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: '8px 12px', color: '#fff', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginBottom: 14 }}>
+        <button onClick={() => setView(backView)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: '8px 12px', color: '#fff', fontFamily: 'Outfit', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginBottom: 14 }}>
           <Icon name="chevronLeft" size={14} color="#fff" /> Voltar
         </button>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -290,7 +399,27 @@ function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
         </div>
       </div>
 
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: 12, padding: 4, gap: 2 }}>
+          {([['detalhes', 'Detalhes'], ['orientacoes', 'Orientações']] as const).map(([v, l]) => (
+            <button key={v} onClick={() => setDetailTab(v)} style={{ flex: 1, padding: '9px 6px', borderRadius: 9, border: 'none', background: detailTab === v ? '#fff' : 'transparent', boxShadow: detailTab === v ? 'var(--shadow-sm)' : 'none', color: detailTab === v ? 'var(--teal-800)' : 'var(--gray-text)', fontFamily: 'Outfit', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s' }}>{l}</button>
+          ))}
+        </div>
+      </div>
+
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {detailTab === 'orientacoes' && (
+          d.level === null
+            ? <Empty icon={<Icon name="lightbulb" size={28} />} title="Ainda sem orientações" desc="As orientações aparecem depois que o diagnóstico for classificado." />
+            : (() => {
+                const relevant = TIPS.filter(t => t.pub && t.levels.includes(d.level as 1 | 2 | 3)).sort((a, b) => a.order - b.order)
+                return relevant.length === 0
+                  ? <Empty icon={<Icon name="lightbulb" size={28} />} title="Nenhuma orientação cadastrada" desc="Ainda não há dicas para essa classificação." />
+                  : relevant.map(tip => <TipCard key={tip.id} tip={tip} />)
+              })()
+        )}
+        {detailTab === 'detalhes' && (
+        <>
         {/* IA result */}
         <Card style={{ background: 'linear-gradient(135deg,rgba(11,107,130,0.05),rgba(22,163,74,0.04))', border: '1px solid rgba(11,107,130,0.12)' }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
@@ -314,16 +443,21 @@ function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
         </Card>
 
         {/* Anamnese */}
-        <Card>
-          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 14, color: 'var(--body)', marginBottom: 12 }}>Anamnese</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {Object.entries(d.anam).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 10 }}>
-                <span style={{ fontSize: 13, color: 'var(--gray-text)', textTransform: 'capitalize' }}>{k.replace(/([A-Z])/g, ' $1')}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit' }}>{v}</span>
-              </div>
-            ))}
-          </div>
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <button onClick={() => setAnamOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 20, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+            <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 14, color: 'var(--body)' }}>Anamnese</div>
+            <Icon name="chevronRight" size={16} color="var(--gray-3)" style={{ transform: anamOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+          {anamOpen && (
+            <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {Object.entries(d.anam).map(([k, v]) => (
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 10 }}>
+                  <span style={{ fontSize: 13, color: 'var(--gray-text)', textTransform: 'capitalize' }}>{k.replace(/([A-Z])/g, ' $1')}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit' }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Image placeholder */}
@@ -362,10 +496,12 @@ function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
             </div>
           )}
           <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-            <Btn variant="secondary" onClick={() => setView('diagnostics')}>Cancelar</Btn>
+            <Btn variant="secondary" onClick={() => setView(backView)}>Cancelar</Btn>
             <Btn full variant="success" onClick={() => setSaved(true)}><Icon name="check" size={16} color="#fff" /> Salvar revisão</Btn>
           </div>
         </Card>
+        </>
+        )}
         <div style={{ height: 8 }} />
       </div>
     </div>
@@ -373,7 +509,7 @@ function DiagnosticReview({ setView }: { setView: (v: ProfView) => void }) {
 }
 
 // ─── Patients list ────────────────────────────────────────────────────────────
-function PatientsList({ patients, setView }: { patients: Patient[]; setView: (v: ProfView) => void }) {
+function PatientsList({ patients, onEvaluate, onViewPatient }: { patients: Patient[]; onEvaluate: (p: Patient | null) => void; onViewPatient: (p: Patient) => void }) {
   const [search, setSearch] = useState('')
   const filtered = patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
 
@@ -389,11 +525,11 @@ function PatientsList({ patients, setView }: { patients: Patient[]; setView: (v:
         </div>
       </div>
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <Btn full variant="primary" onClick={() => setView('evaluate')}>
+        <Btn full variant="primary" onClick={() => onEvaluate(null)}>
           <Icon name="camera" size={16} color="#fff" /> Avaliar paciente
         </Btn>
         {filtered.map(p => (
-          <Card key={p.id} onClick={() => setView('patient-detail')} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
+          <Card key={p.id} onClick={() => onViewPatient(p)} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
             <Avatar name={p.name} size={48} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)' }}>{p.name}</div>
@@ -413,8 +549,7 @@ function PatientsList({ patients, setView }: { patients: Patient[]; setView: (v:
 }
 
 // ─── Patient detail ───────────────────────────────────────────────────────────
-function PatientDetail({ patients, setView }: { patients: Patient[]; setView: (v: ProfView) => void }) {
-  const p = patients[0]
+function PatientDetail({ patient: p, setView, onOpenDiag, onEvaluate }: { patient: Patient; setView: (v: ProfView) => void; onOpenDiag: (from: ProfView) => void; onEvaluate: (p: Patient | null) => void }) {
   const pDiags = DIAGS.filter(d => d.patient === p.name)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
@@ -435,7 +570,7 @@ function PatientDetail({ patients, setView }: { patients: Patient[]; setView: (v
         </div>
       </div>
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Btn full variant="primary" onClick={() => setView('evaluate')}>
+        <Btn full variant="primary" onClick={() => onEvaluate(p)}>
           <Icon name="camera" size={16} color="#fff" /> Avaliar este paciente
         </Btn>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -448,7 +583,7 @@ function PatientDetail({ patients, setView }: { patients: Patient[]; setView: (v
         </div>
         <SectionHeader title="Histórico de diagnósticos" sub={`${pDiags.length} exames`} />
         {pDiags.map(d => (
-          <Card key={d.id} onClick={() => setView('diag-detail')} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
+          <Card key={d.id} onClick={() => onOpenDiag('patient-detail')} hover style={{ cursor: 'pointer', display: 'flex', gap: 14, alignItems: 'center' }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: '#0a3d4a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="scan" size={20} color="rgba(255,255,255,0.7)" />
             </div>
@@ -456,8 +591,10 @@ function PatientDetail({ patients, setView }: { patients: Patient[]; setView: (v
               <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14 }}>Diagnóstico #{d.id}</div>
               <div style={{ fontSize: 12, color: 'var(--gray-text)' }}>{d.date}</div>
             </div>
-            {d.level !== null && <LevelChip level={d.level} size="sm" />}
-            <Badge label={d.status} status={statusBadge(d.status)} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+              {d.level !== null && <LevelChip level={d.level} size="sm" />}
+              <Badge label={d.status} status={statusBadge(d.status)} />
+            </div>
             <Icon name="chevronRight" size={16} color="var(--gray-3)" />
           </Card>
         ))}
@@ -469,10 +606,10 @@ function PatientDetail({ patients, setView }: { patients: Patient[]; setView: (v
 // ─── Avaliar paciente (Selecionar → Anamnese → Foto → Revisão) ────────────────
 const EVAL_STEPS = ['Paciente', 'Anamnese', 'Captura', 'Revisão']
 
-function EvaluatePatient({ patients, onAddPatient, setView }: { patients: Patient[]; onAddPatient: (p: Patient) => void; setView: (v: ProfView) => void }) {
-  const [step, setStep] = useState(0)
+function EvaluatePatient({ patients, onAddPatient, setView, initialPatient, onFinishToPatient }: { patients: Patient[]; onAddPatient: (p: Patient) => void; setView: (v: ProfView) => void; initialPatient: Patient | null; onFinishToPatient: (p: Patient) => void }) {
+  const [step, setStep] = useState(initialPatient ? 1 : 0)
   const [search, setSearch] = useState('')
-  const [patient, setPatient] = useState<Patient | null>(null)
+  const [patient, setPatient] = useState<Patient | null>(initialPatient)
 
   const [addingNew, setAddingNew] = useState(false)
   const [newName, setNewName] = useState('')
@@ -695,16 +832,7 @@ function EvaluatePatient({ patients, onAddPatient, setView }: { patients: Patien
 
         {/* 2b — Processando */}
         {step === 2 && processing && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '60px 0', gap: 24 }}>
-            <div style={{ position: 'relative', width: 64, height: 64 }}>
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--teal-800)', animation: 'spin 0.85s linear infinite' }} />
-            </div>
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            <div>
-              <h2 style={{ fontFamily: 'Outfit', fontSize: 17, fontWeight: 800, color: 'var(--body)', margin: '0 0 6px' }}>Analisando imagem</h2>
-              <p style={{ fontSize: 13, color: 'var(--gray-text)' }}>A IA está processando o pré-diagnóstico</p>
-            </div>
-          </div>
+          <ScanLoader title="Analisando imagem" subtitle="A IA está processando o pré-diagnóstico" />
         )}
 
         {/* 3 — Revisão */}
@@ -756,7 +884,12 @@ function EvaluatePatient({ patients, onAddPatient, setView }: { patients: Patien
                 <Btn full variant="success" disabled={!classif} onClick={() => setSaved(true)}><Icon name="check" size={16} color="#fff" /> Salvar diagnóstico</Btn>
               </div>
             </Card>
-            {saved && <Btn full onClick={() => setView('patients')}>Concluir e ver pacientes</Btn>}
+            {saved && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Btn full onClick={() => patient && onFinishToPatient(patient)}>Concluir e ir ao paciente</Btn>
+                <Btn full variant="secondary" onClick={() => setView('patients')}>Ver todos os pacientes</Btn>
+              </div>
+            )}
             <div style={{ height: 8 }} />
           </div>
         )}
@@ -766,24 +899,139 @@ function EvaluatePatient({ patients, onAddPatient, setView }: { patients: Patien
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
+// ─── About modal ──────────────────────────────────────────────────────────────
+const CREDITS = [
+  { role: 'Desenvolvimento', name: 'Nome do integrante' },
+  { role: 'Desenvolvimento', name: 'Nome do integrante' },
+  { role: 'Design', name: 'Nome do integrante' },
+  { role: 'Gestão de Produto', name: 'Nome do integrante' },
+]
+
+function AboutModal({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal onClose={onClose} title="Sobre">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ textAlign: 'center' }}>
+          <img src={cybIcon} alt="Check Your Breath" style={{ height: 56, objectFit: 'contain', margin: '0 auto 10px' }} />
+          <div style={{ fontFamily: 'Outfit', fontWeight: 900, fontSize: 17, color: 'var(--body)' }}>Check Your Breath</div>
+          <div style={{ fontSize: 12, color: 'var(--gray-text)', marginTop: 2 }}>v1.0.0 · Protótipo</div>
+        </div>
+
+        <p style={{ fontSize: 13, color: 'var(--gray-text)', lineHeight: 1.6, margin: 0 }}>
+          O Check Your Breath é um app de pré-diagnóstico de halitose desenvolvido em parceria com a Hality,
+          como projeto da disciplina AGES (Ambientes e Gestão para o Desenvolvimento de Software) da PUCRS.
+          A proposta é facilitar o acesso a uma triagem inicial do hálito com apoio de inteligência artificial,
+          conectando pacientes a profissionais especializados para confirmação clínica.
+        </p>
+
+        <div>
+          <div style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: 13, color: 'var(--body)', marginBottom: 10 }}>Equipe AGES</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {CREDITS.map((c, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg)', borderRadius: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--body)', fontFamily: 'Outfit' }}>{c.name}</span>
+                <span style={{ fontSize: 12, color: 'var(--gray-text)' }}>{c.role}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+          <img src={halityLogo} alt="Hality" style={{ height: 16, objectFit: 'contain', opacity: 0.6 }} />
+          <span style={{ fontSize: 11, color: 'var(--gray-3)' }}>em parceria com Hality</span>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Edit profile modal ────────────────────────────────────────────────────────
+function EditProfileModal({ initial, onClose, onSave }: { initial: { name: string; email: string; especialidade: string; registro: string }; onClose: () => void; onSave: (v: { name: string; email: string; especialidade: string; registro: string }) => void }) {
+  const [name, setName] = useState(initial.name)
+  const [email, setEmail] = useState(initial.email)
+  const [especialidade, setEspecialidade] = useState(initial.especialidade)
+  const [registro, setRegistro] = useState(initial.registro)
+
+  return (
+    <Modal onClose={onClose} title="Editar perfil">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Nome</label>
+          <input value={name} onChange={e => setName(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>E-mail</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Especialidade</label>
+          <input value={especialidade} onChange={e => setEspecialidade(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Registro</label>
+          <input value={registro} onChange={e => setRegistro(e.target.value)} style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <Btn full size="lg" disabled={!name.trim() || !email.trim()} onClick={() => onSave({ name, email, especialidade, registro })}>Salvar alterações</Btn>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Change password modal ───────────────────────────────────────────────────
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const [current, setCurrent] = useState('')
+  const [next, setNextPw] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [saved, setSaved] = useState(false)
+  const mismatch = confirm.length > 0 && next !== confirm
+  const canSave = current.length > 0 && next.length >= 6 && next === confirm
+
+  return (
+    <Modal onClose={onClose} title="Alterar senha">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Senha atual</label>
+          <input type="password" value={current} onChange={e => setCurrent(e.target.value)} placeholder="Digite sua senha atual" style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Nova senha</label>
+          <input type="password" value={next} onChange={e => setNextPw(e.target.value)} placeholder="Mínimo 6 caracteres" style={{ width: '100%', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--gray-text)', marginBottom: 6, fontFamily: 'Outfit', textTransform: 'uppercase', letterSpacing: 0.5 }}>Confirmar nova senha</label>
+          <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repita a nova senha" style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${mismatch ? '#DC2626' : 'var(--border)'}`, borderRadius: 12, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+          {mismatch && <span style={{ fontSize: 12, color: '#DC2626' }}>As senhas não coincidem.</span>}
+        </div>
+        {saved && <Alert message="Senha atualizada com sucesso!" type="success" />}
+        <Btn full size="lg" disabled={!canSave} onClick={() => setSaved(true)}>Atualizar senha</Btn>
+      </div>
+    </Modal>
+  )
+}
+
 function ProfProfile({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
+  const [showAboutModal, setShowAboutModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [profile, setProfile] = useState({ name: user.name, email: user.email, especialidade: 'Odontologia / Halitose', registro: 'CRO-SP 98765' })
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       <div style={{ background: 'linear-gradient(160deg, #0a3d4a 0%, #0B6B82 55%, #0d8aa6 100%)', padding: '32px 20px 56px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(22,163,74,0.12)', filter: 'blur(20px)' }} />
-        <Avatar name={user.name} size={72} role="professional" />
+        <Avatar name={profile.name} size={72} role="professional" />
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 900, color: '#fff' }}>{user.name}</div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Profissional · {user.email}</div>
+          <div style={{ fontFamily: 'Outfit', fontSize: 18, fontWeight: 900, color: '#fff' }}>{profile.name}</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Profissional · {profile.email}</div>
         </div>
       </div>
       <div style={{ margin: '24px 16px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Card>
           {[
-            { label: 'Especialidade', value: 'Odontologia / Halitose' },
-            { label: 'Registro', value: 'CRO-SP 98765' },
+            { label: 'Especialidade', value: profile.especialidade },
+            { label: 'Registro', value: profile.registro },
             { label: 'Vínculo Hality', value: 'Profissional parceiro' },
-            { label: 'E-mail', value: user.email },
+            { label: 'E-mail', value: profile.email },
           ].map((f, i, arr) => (
             <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
               <span style={{ fontSize: 13, color: 'var(--gray-text)' }}>{f.label}</span>
@@ -793,16 +1041,26 @@ function ProfProfile({ user, onLogout }: { user: AuthUser; onLogout: () => void 
         </Card>
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {[
-            { icon: <Icon name="pencil" size={18} color="var(--teal-800)" />, label: 'Editar perfil', bg: 'var(--teal-100)' },
-            { icon: <Icon name="key" size={18} color="#FF9500" />, label: 'Alterar senha', bg: '#FEF3C7' },
-          ].map((item, i) => (
-            <div key={item.label} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '14px 20px', borderBottom: i === 0 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}>
+            { icon: <Icon name="pencil" size={18} color="var(--teal-800)" />, label: 'Editar perfil', bg: 'var(--teal-100)', action: () => setShowEditModal(true) },
+            { icon: <Icon name="key" size={18} color="#FF9500" />, label: 'Alterar senha', bg: '#FEF3C7', action: () => setShowPasswordModal(true) },
+            { icon: <Icon name="info" size={18} color="var(--gray-text)" />, label: 'Sobre', bg: 'var(--bg)', action: () => setShowAboutModal(true) },
+          ].map((item, i, arr) => (
+            <button key={item.label} onClick={item.action} style={{ width: '100%', display: 'flex', gap: 14, alignItems: 'center', padding: '14px 20px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.icon}</div>
               <div style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: 14, color: 'var(--body)', flex: 1 }}>{item.label}</div>
               <Icon name="chevronRight" size={16} color="var(--gray-3)" />
-            </div>
+            </button>
           ))}
         </Card>
+        {showAboutModal && <AboutModal onClose={() => setShowAboutModal(false)} />}
+        {showEditModal && (
+          <EditProfileModal
+            initial={profile}
+            onClose={() => setShowEditModal(false)}
+            onSave={v => { setProfile(v); setShowEditModal(false) }}
+          />
+        )}
+        {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
         <Btn full variant="danger" size="lg" onClick={onLogout}>
           <Icon name="signOut" size={18} color="#DC2626" /> Sair da conta
         </Btn>
@@ -816,20 +1074,33 @@ function ProfProfile({ user, onLogout }: { user: AuthUser; onLogout: () => void 
 export default function ProfessionalApp({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
   const [view, setView] = useState<ProfView>('dashboard')
   const [patients, setPatients] = useState<Patient[]>(INITIAL_PATIENTS)
+  const [diagBackView, setDiagBackView] = useState<ProfView>('diagnostics')
+  const [evalPatient, setEvalPatient] = useState<Patient | null>(null)
+  const [viewedPatient, setViewedPatient] = useState<Patient>(INITIAL_PATIENTS[0])
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0)
+  }, [view])
 
   const addPatient = (p: Patient) => setPatients(prev => [p, ...prev])
+  const openDiag = (from: ProfView) => { setDiagBackView(from); setView('diag-detail') }
+  const openEvaluate = (p: Patient | null) => { setEvalPatient(p); setView('evaluate') }
+  const openPatient = (p: Patient) => { setViewedPatient(p); setView('patient-detail') }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 480, margin: '0 auto', position: 'relative' }}>
       {view !== 'evaluate' && <TopBar user={user} onProfile={() => setView('profile')} />}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
-        {view === 'dashboard'     && <Dashboard user={user} patients={patients} setView={setView} />}
-        {view === 'diagnostics'   && <DiagnosticsList setView={setView} />}
-        {view === 'diag-detail'   && <DiagnosticReview setView={setView} />}
-        {view === 'patients'      && <PatientsList patients={patients} setView={setView} />}
-        {view === 'patient-detail'&& <PatientDetail patients={patients} setView={setView} />}
-        {view === 'evaluate'      && <EvaluatePatient patients={patients} onAddPatient={addPatient} setView={setView} />}
-        {view === 'profile'       && <ProfProfile user={user} onLogout={onLogout} />}
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
+        <div key={view} className="page-enter">
+          {view === 'dashboard'     && <Dashboard user={user} patients={patients} setView={setView} onOpenDiag={openDiag} onEvaluate={openEvaluate} />}
+          {view === 'diagnostics'   && <DiagnosticsList setView={setView} onOpenDiag={openDiag} />}
+          {view === 'diag-detail'   && <DiagnosticReview setView={setView} backView={diagBackView} />}
+          {view === 'patients'      && <PatientsList patients={patients} onEvaluate={openEvaluate} onViewPatient={openPatient} />}
+          {view === 'patient-detail'&& <PatientDetail patient={viewedPatient} setView={setView} onOpenDiag={openDiag} onEvaluate={openEvaluate} />}
+          {view === 'evaluate'      && <EvaluatePatient patients={patients} onAddPatient={addPatient} setView={setView} initialPatient={evalPatient} onFinishToPatient={openPatient} />}
+          {view === 'profile'       && <ProfProfile user={user} onLogout={onLogout} />}
+        </div>
       </div>
       {view !== 'evaluate' && <BottomNav view={view} setView={setView} />}
     </div>

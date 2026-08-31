@@ -68,3 +68,29 @@ input, textarea, select { font-family: -apple-system, BlinkMacSystemFont, 'Inter
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gray-3); }
+
+/* ─── Motion ──────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes pageIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes sheetUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .page-enter    { animation: pageIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .modal-backdrop{ animation: fadeIn 0.18s ease both; }
+  .modal-sheet   { animation: sheetUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .pop-in        { animation: popIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .stagger-item  { animation: pageIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) both; }
+}
